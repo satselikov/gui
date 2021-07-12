@@ -31,11 +31,15 @@ def init_labels():
     for index, val in enumerate(words):
         label_dict[val] = tk.Label(root, text=val,
             font=fontStyle).grid(row = index+1, column = 0)
+        
+def print_lines():
+    print("------------------------")
 
 status = False
 def isClicked(button, text, var):
     global status
     status = not status
+    print_lines()
     if status:
         button["text"] = "OFF"
         var.set_status(False)
@@ -57,35 +61,66 @@ class PowerSupply:
         self.status = status
     def get_status(self):
         return self.status
-
+    
 def submit(component, entry, bitsON, bitsOFF, text):
+    print_lines()
     print("Clicked submit for: ", text)
     if(component.get_status() == True):
-        submit_helper(text, entry)
+        submit_helper(component, text, entry)
         bus.write_byte_data(0x74, 0x02, bitsON)
     else:
-        submit_helper(text, entry)
+        submit_helper(component, text, entry)
         bus.write_byte_data(0x74, 0x02, bitsOFF)
     print("Status: ", component.get_status())
     
-def submit_helper(text, entry):
+def submit_helper(component, text, entry):
     if(len(entry.get()) == 0 ):
         print("Entry for", text, " : None")
     else:
+        component.set_voltage(entry.get())
         print("Entry for", text, " :",  entry.get())
+
+def calibrate(text, a, b, c, b1, c1, component):
+    print_lines()
+    print("SETTING" , text, "TO 0x0000")
+    bus.write_i2c_block_data(0x11, a, [b, c])
+    print("Please measure value for:", text)
+    min_value = int(input("Min Value: "))
+    
+    print_lines()
+    print("SETTING" , text, "TO 0x0FFF")
+    bus.write_i2c_block_data(0x11, a, [b1, c1])
+    print("Please measure value for:", text)
+    max_value = int(input("Max Value: "))
+    
+    slope = 4096/(max_value - min_value)
+    offset = -abs(slope)*max_value
+    DAC = slope*float(component.get_voltage())+offset
+    
+    print("Slope: ", slope)
+    print("Offset: ", offset)
+    print("DAC:", DAC)
+    
+    
 
 # INIT TIA
 TIA = PowerSupply(1.8, False)
+TIA_text = "TIA"
 button_TIA = tk.Button(root, text="OFF", font=fontStyle,
-        command=lambda:isClicked(button_TIA, "button_TIA", TIA))
+                       command=lambda:isClicked(button_TIA, TIA_text, TIA))
 button_TIA.grid(row=1, column=3)
 
 TIA_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
 TIA_voltage_entry.grid(row=1, column=1)
 
-TIA_submit = tk.Button(root, text="Submit", font=fontStyle, 
-        command=lambda:submit(TIA, TIA_voltage_entry, 0x01, 0x00, "TIA"))
+TIA_submit = tk.Button(root, text="Submit", font=fontStyle,
+                       command=lambda:submit(TIA, TIA_voltage_entry, 0x01, 0x00, TIA_text))
 TIA_submit.grid(row=1,column=4)
+
+TIA_calibrate = tk.Button(root, text="Cal", font=fontStyle,
+                          command = lambda:calibrate(TIA_text, 0x10, 0x80, 0x00, 0x8f, 0xff, TIA))
+TIA_calibrate.grid(row=1, column=5)
+        
 
 # INIT LED
 LED = PowerSupply(4.4, False)
