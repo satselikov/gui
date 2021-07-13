@@ -49,6 +49,17 @@ def isClicked(button, text, var):
         var.set_status(True)
         print(text + " status is" , var.get_status())
 
+'''
+TODOs:
+add offset, slope to variable of power supply object instance
+calibrate -> populates offset and slope variable
+
+voltage_entry per component uses slope and offset to set DAC via submit function depending on which component it is
+(need to modify submit parameters and pass the correct bits)
+
+somehow save offset + slope per instance and load them up from a file (save + load button add to bottom)
+'''
+
 class PowerSupply:
     def __init__(self, voltage, status):
         self.voltage = voltage
@@ -85,21 +96,19 @@ def calibrate(text, a, b, c, b1, c1, component):
     print("SETTING" , text, "TO 0x0000")
     bus.write_i2c_block_data(0x11, a, [b, c])
     print("Please measure value for:", text)
-    min_value = int(input("Min Value: "))
+    min_value = float(input("Min Value: "))
     
     print_lines()
     print("SETTING" , text, "TO 0x0FFF")
     bus.write_i2c_block_data(0x11, a, [b1, c1])
     print("Please measure value for:", text)
-    max_value = int(input("Max Value: "))
+    max_value = float(input("Max Value: "))
     
     slope = 4096/(max_value - min_value)
     offset = -abs(slope)*min_value
-    DAC = slope*float(component.get_voltage())+offset
     
     print("Slope: ", slope)
     print("Offset: ", offset)
-    print("DAC:", DAC)
     
 
 # INIT TIA
