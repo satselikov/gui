@@ -87,7 +87,7 @@ class PowerSupply:
     def set_offset(self, offset):
         self.offset = offset
     
-def submit(component, entry, text):
+def submit(component, entry, text, bits):
     print_lines()
     print("Clicked submit for: ", text)
     if(len(entry.get()) == 0 ):
@@ -98,6 +98,33 @@ def submit(component, entry, text):
     print("Status: ", component.get_status())
     print("Slope: ", component.get_slope())
     print("Offset: ", component.get_offset())
+    
+    voltage = component.get_voltage()
+    slope = component.get_slope()
+    offset = component.get_offset()
+    
+    #    bus.write_i2c_block_data(0x11, a, [b, c])
+    DAC = float(voltage) * float(slope) + float(offset)
+    print(DAC)
+    DAC = int(DAC)
+    print(DAC)
+    DAC = hex(DAC) #0x987
+    print(DAC)
+    DAC = DAC[2:] #987
+    DAC_1 = DAC[:1] #9
+    DAC_2 = DAC[1:] #87
+    
+    #TODO fix hard code from TIA to the rest
+    DAC_1 = "8" + DAC_1 #89
+    print(DAC_1)
+    print(DAC_2)
+    DAC_1 = "0x" + DAC_1
+    DAC_2 = "0x" + DAC_2
+    DAC_1 = int(DAC_1, 16)
+    DAC_2 = int(DAC_2, 16)
+    
+    bus.write_i2c_block_data(0x11, bits, [DAC_1, DAC_2])
+    
 
 
 def calibrate(text, a, b, c, b1, c1, component):
@@ -114,8 +141,8 @@ def calibrate(text, a, b, c, b1, c1, component):
     print("Please measure value for:", text)
     max_value = float(input("Max Value: "))
     
-    slope = 4096/(max_value - min_value)
-    offset = -abs(slope)*min_value
+    slope = (2816)/(max_value - min_value)
+    offset = -abs(slope)*min_value+1279
     
     component.set_slope(slope)
     component.set_offset(offset)
@@ -135,11 +162,11 @@ TIA_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
 TIA_voltage_entry.grid(row=1, column=1)
 
 TIA_submit = tk.Button(root, text="Submit", font=fontStyle,
-                       command=lambda:submit(TIA, TIA_voltage_entry, TIA_text))
+                       command=lambda:submit(TIA, TIA_voltage_entry, TIA_text, 0x10))
 TIA_submit.grid(row=1,column=4)
 
 TIA_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                          command = lambda:calibrate(TIA_text, 0x10, 0x80, 0x00, 0x8f, 0xff, TIA))
+                          command = lambda:calibrate(TIA_text, 0x10, 0x84, 0xff, 0x8f, 0xff, TIA))
 TIA_calibrate.grid(row=1, column=5)
         
 
@@ -176,7 +203,7 @@ DRV_submit = tk.Button(root, text="Submit", font=fontStyle,
 DRV_submit.grid(row=3,column=4)
 
 DRV_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                          command = lambda:calibrate(DRV_text, 0x11, 0x90, 0x00, 0x9f, 0xff, DRV))
+                          command = lambda:calibrate(DRV_text, 0x11, 0x94, 0xff, 0x9f, 0xff, DRV))
 DRV_calibrate.grid(row=3, column=5)
 
 # INIT LA
@@ -194,7 +221,7 @@ LA_submit = tk.Button(root, text="Submit", font=fontStyle,
 LA_submit.grid(row=4,column=4)
 
 LA_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                          command = lambda:calibrate(LA_text, 0x12, 0xa0, 0x00, 0xaf, 0xff, LA))
+                          command = lambda:calibrate(LA_text, 0x12, 0xa4, 0xff, 0xaf, 0xff, LA))
 LA_calibrate.grid(row=4, column=5)
 
 # INIT BF
@@ -212,7 +239,7 @@ BF_submit = tk.Button(root, text="Submit", font=fontStyle,
 BF_submit.grid(row=5,column=4)
 
 BF_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                          command = lambda:calibrate(BF_text, 0x13, 0xb0, 0x00, 0xbf, 0xff, BF))
+                          command = lambda:calibrate(BF_text, 0x13, 0xb4, 0xff, 0xbf, 0xff, BF))
 BF_calibrate.grid(row=5, column=5)
     
 # INIT BG
@@ -230,7 +257,7 @@ BG_submit = tk.Button(root, text="Submit", font=fontStyle,
 BG_submit.grid(row=6,column=4)
 
 BG_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                          command = lambda:calibrate(BG_text, 0x14, 0xc0, 0x00, 0xcf, 0xff, BG))
+                          command = lambda:calibrate(BG_text, 0x14, 0xc4, 0xff, 0xcf, 0xff, BG))
 BG_calibrate.grid(row=6, column=5)
     
 # INIT PD
@@ -248,7 +275,7 @@ PD_submit = tk.Button(root, text="Submit", font=fontStyle,
 PD_submit.grid(row=7,column=4)
 
 PD_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                          command = lambda:calibrate(PD_text, 0x15, 0xd0, 0x00, 0xdf, 0xff, PD))
+                          command = lambda:calibrate(PD_text, 0x15, 0xd4, 0xff, 0xdf, 0xff, PD))
 PD_calibrate.grid(row=7, column=5)
 
 # INIT 2.5V
@@ -266,7 +293,7 @@ V2_5_submit = tk.Button(root, text="Submit", font=fontStyle,
 V2_5_submit.grid(row=8,column=4)
 
 V2_5_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                          command = lambda:calibrate(V2_5_text, 0x16, 0xe0, 0x00, 0xef, 0xff, V2_5))
+                          command = lambda:calibrate(V2_5_text, 0x16, 0xe4, 0xff, 0xef, 0xff, V2_5))
 V2_5_calibrate.grid(row=8, column=5)
 
 # INIT 1.8V
@@ -284,7 +311,7 @@ V1_8_submit = tk.Button(root, text="Submit", font=fontStyle,
 V1_8_submit.grid(row=9,column=4)
 
 V1_8_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                          command = lambda:calibrate(V1_8_text, 0x17, 0xf0, 0x00, 0xff, 0xff, V1_8))
+                          command = lambda:calibrate(V1_8_text, 0x17, 0xf4, 0xff, 0xff, 0xff, V1_8))
 V1_8_calibrate.grid(row=9, column=5)
     
 # INIT 1.2V
