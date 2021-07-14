@@ -4,10 +4,11 @@ import tkinter.font as tkFont
 import smbus
 
 '''
-remove cal buttons
-hard code calibrations for min and max for each component manually
-TIA: min=1.710, max=2.994
+TODOS
+-remove cal buttons
+-hard code calibrations for min and max for each component manually
 
+TIA: min=1.710, max=2.994
 DRV: min= 1.142, max=1.997
 LA: min= 1.142, max=2.001
 BF: min= 1.143, max=2.002
