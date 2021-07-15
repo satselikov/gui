@@ -148,7 +148,7 @@ Submit method - when you click the submit button per component entry
 component: object instance of the Power Supply class (voltage, status, slope, offset)
 entry: entry value pulled from user input text box
 text: COMPONENT_text EX; "TIA" or "DRV"
-Ex; x11 0x10 0x85 0xca
+Ex; 0x11 0x10 0x85 0xca
 bits: 0x10, 2nd group of 8bits to identify component
 which: 8 to identify component 
 '''
@@ -160,9 +160,9 @@ def submit(component, entry, text, bits, which):
     else:
         component.set_voltage(entry.get())
         print("Entry for", text, " :",  entry.get())
-    print("Status: ", component.get_status())
-    print("Slope: ", component.get_slope())
-    print("Offset: ", component.get_offset())
+#     print("Status: ", component.get_status())
+#     print("Slope: ", component.get_slope())
+#     print("Offset: ", component.get_offset())
     
     voltage = component.get_voltage()
     slope = component.get_slope()
@@ -170,11 +170,8 @@ def submit(component, entry, text, bits, which):
     
     #    bus.write_i2c_block_data(0x11, a, [b, c])
     DAC = float(voltage) * float(slope) + float(offset)
-    
-    print(DAC)
     DAC = int(DAC)
     DAC = hex(DAC) #0x987
-    print(DAC)
     DAC = DAC[2:] #987
     DAC_1 = DAC[:1] #9
     DAC_2 = DAC[1:] #87
@@ -208,8 +205,8 @@ def calibrate(component, MIN_DAC, MAX_DAC, min_value, max_value):
     component.set_slope(slope)
     component.set_offset(offset)
     
-    print("Slope: ", slope)
-    print("Offset: ", offset)
+#     print("Slope: ", slope)
+#     print("Offset: ", offset)
     
 
 # INIT TIA
@@ -230,23 +227,64 @@ calibrate(TIA, 0x4ff, 0xfff, 1.710, 2.994)
 
 
 def LEDfunc():
-    bus.write_byte_data(0x2f, 0x1c, 0x03) #unlocks the POT
+    print("pressed led")
     
-    bus.write_byte_data(0x2f, 0x07, 0xff)
+    bus.write_byte_data(0x74, 0x02, 0x02)
+    bus.write_byte_data(0x2f, 0x1c, 0x03) #unlocks the POT
+    #bus.write_byte_data(0x2f, data_to_write_1, data_to_write_2)
+    bus.write_byte_data(0x2f, 0x04, 0x14)
 
-# INIT LED
+def LED_sub(component, entry, text, address):
+    
+    if(len(entry.get()) == 0 ):
+        print("Entry for", text, " : None")
+    else:
+        component.set_voltage(entry.get())
+        print("Entry for", text, " :",  entry.get())
+    
+    voltage = component.get_voltage()
+    slope = component.get_slope()
+    offset = component.get_offset()
+
+    DAC = float(voltage) * float(slope) + float(offset)
+    DAC = int(DAC)
+    DAC = hex(DAC)
+    data_to_write = 0x0400 | int(DAC, 16)
+
+    data_to_write = hex(data_to_write)
+
+    data_to_write = data_to_write[2:]
+    data_to_write = "0" + data_to_write
+    
+    data_to_write_1 = data_to_write[:2]
+    data_to_write_2 = data_to_write[2:]
+
+    data_to_write_1 = int(data_to_write_1, 16)
+    data_to_write_2 = int(data_to_write_2, 16)
+    
+    print(hex(data_to_write_1))
+    print(hex(data_to_write_2))
+    
+    bus.write_byte_data(0x2f, 0x1c, 0x03) #unlocks the POT
+    #bus.write_byte_data(0x2f, data_to_write_1, data_to_write_2)
+    bus.write_byte_data(0x2f, data_to_write_1, data_to_write_2)
+    
+#INIT LED
 LED = PowerSupply(4.4,False,0,0)
 LED_text = "LED"
-button_LED = tk.Button(root, text="Set", font=fontStyle,
-                       command=lambda:LEDfunc)
+#isClicked(button_LED, LED_text, LED, 0x02, 0x00, 0x02))
+button_LED = tk.Button(root, text="OFF", font=fontStyle,
+                       command=lambda:isClicked(button_LED, LED_text, LED, 0x02, 0x00, 0x02))
 button_LED.grid(row=2, column=3)
     
 LED_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
 LED_voltage_entry.grid(row=2, column=1)
     
 LED_submit = tk.Button(root, text="Submit", font=fontStyle,
-                       command=lambda:submit(LED, LED_voltage_entry, LED_text))
+                       command=lambda:LED_sub(LED, LED_voltage_entry, LED_text, 0x2f))
 LED_submit.grid(row=2,column=4)
+
+calibrate(LED, 0x003, 0x014, 0.670, 3.889)
 
 # INIT DRV
 DRV = PowerSupply(1.0,False,0,0)
