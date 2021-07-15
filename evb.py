@@ -3,11 +3,12 @@ from tkinter import *
 import tkinter.font as tkFont
 import smbus
 
+bus = smbus.SMBus(1)
+
 '''
 TODOS
 -remove cal buttons
 -hard code calibrations for min and max for each component manually
-
 TIA: min=1.710, max=2.994
 DRV: min= 1.142, max=1.997
 LA: min= 1.142, max=2.001
@@ -17,8 +18,6 @@ PD: min= 3.057, max=3.990
 2.5V: min= 2.776, max=3.626
 1.8V: min= 1.708, max=2.993
 '''
-
-bus = smbus.SMBus(1)
 
 '''
 Initialize the board 
@@ -61,7 +60,6 @@ def print_lines():
 
 '''
 isClicked method used for changing the on/off button and 
-
 -Params-
 button: passed as an argument and corresponding button will change to either on or off text
 text: COMPONENT_text EX; "TIA" or "DRV"
@@ -99,6 +97,10 @@ def isClicked(button, text, component, bitsON, bitsOFF, bits):
 
 '''
 TODOs:
+add offset, slope to variable of power supply object instance
+calibrate -> populates offset and slope variable
+voltage_entry per component uses slope and offset to set DAC via submit function depending on which component it is
+(need to modify submit parameters and pass the correct bits)
 somehow save offset + slope per instance and load them up from a file (save + load button add to bottom)
 '''
 
@@ -106,7 +108,6 @@ somehow save offset + slope per instance and load them up from a file (save + lo
 Power Supply Class
 Each component creates an instance of this class.
 Getters and Setters for every variable included.
-
 Params -
 voltage: from voltage entry box
 status: whether component is on/off
@@ -138,7 +139,6 @@ class PowerSupply:
     
 '''
 Submit method - when you click the submit button per component entry
-
 -Params-
 component: object instance of the Power Supply class (voltage, status, slope, offset)
 entry: entry value pulled from user input text box
@@ -183,9 +183,7 @@ def submit(component, entry, text, bits, which):
 
 '''
 Calibration method called by the cal button
-
 TIA_text, 0x10, 0x84, 0xff, 0x8f, 0xff, TIA
-
 Params-
 text: COMPONENT_text EX; "TIA" or "DRV"
 Ex; 0x11 0x10 0x85 0xca
@@ -197,20 +195,8 @@ a: 0x10
     c1: 0xff
 component: object instance of the Power Supply class (voltage, status, slope, offset) 
 '''
-def calibrate(text, a, b, c, b1, c1, component, MIN_DAC, MAX_DAC):
-    print_lines()
-    print("Please Remove ASIC")
-    print("SETTING" , text, "TO 0x04FF")
-    bus.write_i2c_block_data(0x11, a, [b, c])
-    print("Please measure value for:", text)
-    min_value = float(input("Min Value: "))
-    
-    print_lines()
-    print("SETTING" , text, "TO 0x0FFF")
-    bus.write_i2c_block_data(0x11, a, [b1, c1])
-    print("Please measure value for:", text)
-    max_value = float(input("Max Value: "))
-    
+def calibrate(component, MIN_DAC, MAX_DAC, min_value, max_value):
+
     slope = (MAX_DAC-MIN_DAC)/(max_value - min_value)
     offset = -abs(slope)*min_value+MIN_DAC
     
@@ -235,8 +221,8 @@ TIA_submit = tk.Button(root, text="Submit", font=fontStyle,
                        command=lambda:submit(TIA, TIA_voltage_entry, TIA_text, 0x10, "8"))
 TIA_submit.grid(row=1,column=4)
 
-TIA_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                          command = lambda:calibrate(TIA_text, 0x10, 0x84, 0xff, 0x8f, 0xff, TIA, 0x4ff, 0xfff))
+calibrate(TIA, 0x4ff, 0xfff, 1.710, 2.994)
+
 TIA_calibrate.grid(row=1, column=5)
         
 
@@ -272,8 +258,8 @@ DRV_submit = tk.Button(root, text="Submit", font=fontStyle,
                        command=lambda:submit(DRV, DRV_voltage_entry, DRV_text, 0x11, "9"))
 DRV_submit.grid(row=3,column=4)
 
-DRV_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                          command = lambda:calibrate(DRV_text, 0x11, 0x94, 0xff, 0x9f, 0xff, DRV, 0x4ff, 0xfff))
+calibrate(DRV, 0x4ff, 0xfff, 1.142, 1.997)
+
 DRV_calibrate.grid(row=3, column=5)
 
 # INIT LA
@@ -290,8 +276,8 @@ LA_submit = tk.Button(root, text="Submit", font=fontStyle,
                       command=lambda:submit(LA, LA_voltage_entry, LA_text, 0x12, "a"))
 LA_submit.grid(row=4,column=4)
 
-LA_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                         command = lambda:calibrate(LA_text, 0x12, 0xa4, 0xff, 0xaf, 0xff, LA, 0x4ff, 0xfff))
+calibrate(LA, 0x4ff, 0xfff, 1.142, 2.001)
+
 LA_calibrate.grid(row=4, column=5)
 
 # INIT BF
@@ -308,8 +294,8 @@ BF_submit = tk.Button(root, text="Submit", font=fontStyle,
                       command=lambda:submit(BF, BF_voltage_entry, BF_text, 0x13, "b"))
 BF_submit.grid(row=5,column=4)
 
-BF_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                         command = lambda:calibrate(BF_text, 0x13, 0xb4, 0xff, 0xbf, 0xff, BF, 0x4ff, 0xfff))
+calibrate(BF, 0x4ff, 0xfff, 1.143, 2.002)
+
 BF_calibrate.grid(row=5, column=5)
     
 # INIT BG
@@ -326,8 +312,8 @@ BG_submit = tk.Button(root, text="Submit", font=fontStyle,
                       command=lambda:submit(BG, BG_voltage_entry, BG_text, 0x14, "c"))
 BG_submit.grid(row=6,column=4)
 
-BG_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                         command = lambda:calibrate(BG_text, 0x14, 0xc4, 0xff, 0xcf, 0xff, BG, 0x4ff, 0xfff))
+calibrate(BG, 0x4ff, 0xfff,1.711, 2.991)
+
 BG_calibrate.grid(row=6, column=5)
     
 # INIT PD
@@ -344,8 +330,7 @@ PD_submit = tk.Button(root, text="Submit", font=fontStyle,
                       command=lambda:submit(PD, PD_voltage_entry, PD_text, 0x15,"d"))
 PD_submit.grid(row=7,column=4)
 
-PD_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                         command = lambda:calibrate(PD_text, 0x15, 0xd9, 0xff, 0xdf, 0xff, PD, 0x9ff, 0xfff))
+calibrate(PD, 0x9ff, 0xfff,3.057, 3.990)
 PD_calibrate.grid(row=7, column=5)
 
 # INIT 2.5V
@@ -362,8 +347,7 @@ V2_5_submit = tk.Button(root, text="Submit", font=fontStyle,
                         command=lambda:submit(V2_5, V2_5_voltage_entry, V2_5_text, 0x16, "e"))
 V2_5_submit.grid(row=8,column=4)
 
-V2_5_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                           command = lambda:calibrate(V2_5_text, 0x16, 0xe9, 0xff, 0xef, 0xff, V2_5, 0x9ff, 0xfff))
+calibrate(V2_5, 0x9ff, 0xfff,2.776, 3.626)
 V2_5_calibrate.grid(row=8, column=5)
 
 # INIT 1.8V
@@ -380,8 +364,8 @@ V1_8_submit = tk.Button(root, text="Submit", font=fontStyle,
                         command=lambda:submit(V1_8, V1_8_voltage_entry, V1_8_text, 0x17, "f"))
 V1_8_submit.grid(row=9,column=4)
 
-V1_8_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-                          command = lambda:calibrate(V1_8_text, 0x17, 0xf4, 0xff, 0xff, 0xff, V1_8, 0x4ff, 0xfff))
+calibrate(V1_8, 0x4ff, 0xfff,1.708, 2.993)
+
 V1_8_calibrate.grid(row=9, column=5)
     
 # INIT 1.2V
