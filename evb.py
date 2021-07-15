@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import *
 import tkinter.font as tkFont
 import smbus
+import pigpio
 
 bus = smbus.SMBus(1)
 
@@ -48,7 +49,7 @@ def init_labels():
 
     label_dict = {}
     words = ["TIA", "LED", "DRV", "LA", "BF", "BG", "PD",
-             "V2_5", "V1_8", "V1_2"]
+             "V2_5", "V1_8", "V1_2", "Clock"]
     for index, val in enumerate(words):
         label_dict[val] = tk.Label(root, text=val,
             font=fontStyle).grid(row = index+1, column = 0)
@@ -78,20 +79,24 @@ For ALL- OFF: 0x00
 bits: 0x02 or 0x03
 '''
 status = False
+master_bits = 0
 def isClicked(button, text, component, bitsON, bitsOFF, bits):
     global status
+    global master_bits
     status = not status
     print_lines()
     if status:
         button["text"] = "OFF"
         component.set_status(False)
-        bus.write_byte_data(0x74, bits, bitsOFF)
+        master_bits = master_bits | bitsOFF
+        bus.write_byte_data(0x74, bits, master_bits)
         print(text + " is disabled.")
         #print(text + " status is" , component.get_status())
     else:
         button["text"] = "ON"
         component.set_status(True)
-        bus.write_byte_data(0x74, bits, bitsON)
+        master_bits = master_bits | bitsON
+        bus.write_byte_data(0x74, bits, master_bits)
         print(text + " is enabled.")
         #print(text + " status is" , component.get_status())
 
@@ -223,14 +228,17 @@ TIA_submit.grid(row=1,column=4)
 
 calibrate(TIA, 0x4ff, 0xfff, 1.710, 2.994)
 
-TIA_calibrate.grid(row=1, column=5)
-        
+
+def LEDfunc():
+    bus.write_byte_data(0x2f, 0x1c, 0x03) #unlocks the POT
+    
+    bus.write_byte_data(0x2f, 0x07, 0xff)
 
 # INIT LED
 LED = PowerSupply(4.4,False,0,0)
 LED_text = "LED"
-button_LED = tk.Button(root, text="OFF", font=fontStyle,
-                       command=lambda:isClicked(button_LED, LED_text, LED, 0x02, 0x00))
+button_LED = tk.Button(root, text="Set", font=fontStyle,
+                       command=lambda:LEDfunc)
 button_LED.grid(row=2, column=3)
     
 LED_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
@@ -239,10 +247,6 @@ LED_voltage_entry.grid(row=2, column=1)
 LED_submit = tk.Button(root, text="Submit", font=fontStyle,
                        command=lambda:submit(LED, LED_voltage_entry, LED_text))
 LED_submit.grid(row=2,column=4)
-
-# LED_calibrate = tk.Button(root, text="Cal", font=fontStyle,
-#                           command = lambda:calibrate(LED_text, 0x10, 0x80, 0x00, 0x8f, 0xff, LED))
-# LED_calibrate.grid(row=2, column=5)
 
 # INIT DRV
 DRV = PowerSupply(1.0,False,0,0)
@@ -260,7 +264,6 @@ DRV_submit.grid(row=3,column=4)
 
 calibrate(DRV, 0x4ff, 0xfff, 1.142, 1.997)
 
-DRV_calibrate.grid(row=3, column=5)
 
 # INIT LA
 LA = PowerSupply(1.0, False,0,0)
@@ -278,7 +281,6 @@ LA_submit.grid(row=4,column=4)
 
 calibrate(LA, 0x4ff, 0xfff, 1.142, 2.001)
 
-LA_calibrate.grid(row=4, column=5)
 
 # INIT BF
 BF = PowerSupply(1.0, False,0,0)
@@ -295,8 +297,6 @@ BF_submit = tk.Button(root, text="Submit", font=fontStyle,
 BF_submit.grid(row=5,column=4)
 
 calibrate(BF, 0x4ff, 0xfff, 1.143, 2.002)
-
-BF_calibrate.grid(row=5, column=5)
     
 # INIT BG
 BG = PowerSupply(1.8, False,0,0)
@@ -313,8 +313,6 @@ BG_submit = tk.Button(root, text="Submit", font=fontStyle,
 BG_submit.grid(row=6,column=4)
 
 calibrate(BG, 0x4ff, 0xfff,1.711, 2.991)
-
-BG_calibrate.grid(row=6, column=5)
     
 # INIT PD
 PD = PowerSupply(3.3, False,0,0)
@@ -331,7 +329,6 @@ PD_submit = tk.Button(root, text="Submit", font=fontStyle,
 PD_submit.grid(row=7,column=4)
 
 calibrate(PD, 0x9ff, 0xfff,3.057, 3.990)
-PD_calibrate.grid(row=7, column=5)
 
 # INIT 2.5V
 V2_5 = PowerSupply(3.3, False,0,0)
@@ -348,7 +345,6 @@ V2_5_submit = tk.Button(root, text="Submit", font=fontStyle,
 V2_5_submit.grid(row=8,column=4)
 
 calibrate(V2_5, 0x9ff, 0xfff,2.776, 3.626)
-V2_5_calibrate.grid(row=8, column=5)
 
 # INIT 1.8V
 V1_8 = PowerSupply(1.8, False,0,0)
@@ -365,8 +361,6 @@ V1_8_submit = tk.Button(root, text="Submit", font=fontStyle,
 V1_8_submit.grid(row=9,column=4)
 
 calibrate(V1_8, 0x4ff, 0xfff,1.708, 2.993)
-
-V1_8_calibrate.grid(row=9, column=5)
     
 # INIT 1.2V
 V1_2 = PowerSupply(1.0, False,0,0)
@@ -381,6 +375,27 @@ V1_2_voltage_entry.grid(row=10, column=1)
 V1_2_submit = tk.Button(root, text="Submit", font=fontStyle,
                         command=lambda:submit(V1_2, V1_2_voltage_entry, 0x00, 0x00, V1_2_text))
 V1_2_submit.grid(row=10,column=4)
+
+pi = pigpio.pi() 
+status_clock = False
+def click(button):
+    global pi
+    global status_clock
+    
+    status_clock = not status_clock
+    print_lines()
+    if status_clock:
+        button["text"] = "OFF"
+        pi.hardware_clock(4, 0)
+    else:
+        button["text"] = "ON"
+        pi.hardware_clock(4, 300000)
+        print("Clock is ON")
+        
+
+clock_button = tk.Button(root, text="OFF", font=fontStyle,
+                         command=lambda:click(clock_button))
+clock_button.grid(row=11, column=3)
 
 # main
 init()
