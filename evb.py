@@ -7,20 +7,6 @@ import pigpio
 bus = smbus.SMBus(1)
 
 '''
-TODOS
--remove cal buttons
--hard code calibrations for min and max for each component manually
-TIA: min=1.710, max=2.994
-DRV: min= 1.142, max=1.997
-LA: min= 1.142, max=2.001
-BF: min= 1.143, max=2.002
-BG: min= 1.711, max=2.991
-PD: min= 3.057, max=3.990
-2.5V: min= 2.776, max=3.626
-1.8V: min= 1.708, max=2.993
-'''
-
-'''
 Initialize the board 
 '''
 def init():
@@ -99,16 +85,7 @@ def isClicked(button, text, component, bitsON, bitsOFF, bits):
         bus.write_byte_data(0x74, bits, master_bits)
         print(text + " is enabled.")
         #print(text + " status is" , component.get_status())
-
-'''
-TODOs:
-add offset, slope to variable of power supply object instance
-calibrate -> populates offset and slope variable
-voltage_entry per component uses slope and offset to set DAC via submit function depending on which component it is
-(need to modify submit parameters and pass the correct bits)
-somehow save offset + slope per instance and load them up from a file (save + load button add to bottom)
-'''
-
+        
 '''
 Power Supply Class
 Each component creates an instance of this class.
@@ -168,7 +145,6 @@ def submit(component, entry, text, bits, which):
     slope = component.get_slope()
     offset = component.get_offset()
     
-    #    bus.write_i2c_block_data(0x11, a, [b, c])
     DAC = float(voltage) * float(slope) + float(offset)
     DAC = int(DAC)
     DAC = hex(DAC) #0x987
@@ -181,7 +157,7 @@ def submit(component, entry, text, bits, which):
     DAC_1 = int(DAC_1, 16) #convert to int as a hex
     DAC_2 = int(DAC_2, 16)
     
-    bus.write_i2c_block_data(0x11, bits, [DAC_1, DAC_2])
+    bus.write_i2c_block_data(0x11, bits, [DAC_1, DAC_2]) 
 
 '''
 Calibration method called by the cal button
@@ -214,26 +190,34 @@ TIA = PowerSupply(1.8,False,0,0)
 TIA_text = "TIA"
 button_TIA = tk.Button(root, text="OFF", font=fontStyle,
                        command=lambda:isClicked(button_TIA, TIA_text, TIA, 0x01, 0x00, 0x02))
-button_TIA.grid(row=1, column=3)
+button_TIA.grid(row=1, column=3) #ON/OFF button, triggers isClicked method
 
 TIA_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
-TIA_voltage_entry.grid(row=1, column=1)
+TIA_voltage_entry.grid(row=1, column=1) #user input entry 
 
 TIA_submit = tk.Button(root, text="Submit", font=fontStyle,
                        command=lambda:submit(TIA, TIA_voltage_entry, TIA_text, 0x10, "8"))
-TIA_submit.grid(row=1,column=4)
+TIA_submit.grid(row=1,column=4) #submit button used to grab component information 
 
 calibrate(TIA, 0x4ff, 0xfff, 1.710, 2.994)
 
-
+#testing method used to hard code LED
 def LEDfunc():
     print("pressed led")
-    
     bus.write_byte_data(0x74, 0x02, 0x02)
     bus.write_byte_data(0x2f, 0x1c, 0x03) #unlocks the POT
-    #bus.write_byte_data(0x2f, data_to_write_1, data_to_write_2)
     bus.write_byte_data(0x2f, 0x04, 0x14)
 
+'''
+LED_submit function: special case submit for LED 10 bits altered instead of 16,
+POT activation towards the end as well
+
+Params-
+component: LED object instance variable from PowerSupply class
+entry: voltage entry grabbed from user input
+text: "LED"
+address: 0x2f 
+'''
 def LED_sub(component, entry, text, address):
     
     if(len(entry.get()) == 0 ):
@@ -246,33 +230,31 @@ def LED_sub(component, entry, text, address):
     slope = component.get_slope()
     offset = component.get_offset()
 
-    DAC = float(voltage) * float(slope) + float(offset)
+    DAC = float(voltage) * float(slope) + float(offset) #calc dac
     DAC = int(DAC)
     DAC = hex(DAC)
     data_to_write = 0x0400 | int(DAC, 16)
 
-    data_to_write = hex(data_to_write)
+    data_to_write = hex(data_to_write) #conv to hex after |
 
-    data_to_write = data_to_write[2:]
-    data_to_write = "0" + data_to_write
+    data_to_write = data_to_write[2:] #take off 0x
+    data_to_write = "0" + data_to_write #add 0 to the front 
     
-    data_to_write_1 = data_to_write[:2]
-    data_to_write_2 = data_to_write[2:]
+    data_to_write_1 = data_to_write[:2] #part 1 
+    data_to_write_2 = data_to_write[2:] #part 2
 
-    data_to_write_1 = int(data_to_write_1, 16)
-    data_to_write_2 = int(data_to_write_2, 16)
+    data_to_write_1 = int(data_to_write_1, 16) #conv back to hex
+    data_to_write_2 = int(data_to_write_2, 16) #conv back to hex
     
-    print(hex(data_to_write_1))
-    print(hex(data_to_write_2))
+#     print(hex(data_to_write_1))
+#     print(hex(data_to_write_2))
     
     bus.write_byte_data(0x2f, 0x1c, 0x03) #unlocks the POT
-    #bus.write_byte_data(0x2f, data_to_write_1, data_to_write_2)
-    bus.write_byte_data(0x2f, data_to_write_1, data_to_write_2)
+    bus.write_byte_data(0x2f, data_to_write_1, data_to_write_2) #writes using SMBUS
     
 #INIT LED
 LED = PowerSupply(4.4,False,0,0)
 LED_text = "LED"
-#isClicked(button_LED, LED_text, LED, 0x02, 0x00, 0x02))
 button_LED = tk.Button(root, text="OFF", font=fontStyle,
                        command=lambda:isClicked(button_LED, LED_text, LED, 0x02, 0x00, 0x02))
 button_LED.grid(row=2, column=3)
@@ -414,6 +396,9 @@ V1_2_submit = tk.Button(root, text="Submit", font=fontStyle,
                         command=lambda:submit(V1_2, V1_2_voltage_entry, 0x00, 0x00, V1_2_text))
 V1_2_submit.grid(row=10,column=4)
 
+'''
+click method used to activate clock 
+'''
 pi = pigpio.pi() 
 status_clock = False
 def click(button):
