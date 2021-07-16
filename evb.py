@@ -35,7 +35,7 @@ def init_labels():
 
     label_dict = {}
     words = ["TIA", "LED", "DRV", "LA", "BF", "BG", "PD",
-             "V2_5", "V1_8", "V1_2", "Clock"]
+             "V2_5", "V1_8", "Clock"]
     for index, val in enumerate(words):
         label_dict[val] = tk.Label(root, text=val,
             font=fontStyle).grid(row = index+1, column = 0)
@@ -193,7 +193,8 @@ button_TIA = tk.Button(root, text="OFF", font=fontStyle,
 button_TIA.grid(row=1, column=3) #ON/OFF button, triggers isClicked method
 
 TIA_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
-TIA_voltage_entry.grid(row=1, column=1) #user input entry 
+TIA_voltage_entry.grid(row=1, column=1) #user input entry
+TIA_voltage_entry.insert(0,1.8)
 
 TIA_submit = tk.Button(root, text="Submit", font=fontStyle,
                        command=lambda:submit(TIA, TIA_voltage_entry, TIA_text, 0x10, "8"))
@@ -261,6 +262,7 @@ button_LED.grid(row=2, column=3)
     
 LED_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
 LED_voltage_entry.grid(row=2, column=1)
+LED_voltage_entry.insert(0,1.8)
     
 LED_submit = tk.Button(root, text="Submit", font=fontStyle,
                        command=lambda:LED_sub(LED, LED_voltage_entry, LED_text, 0x2f))
@@ -277,6 +279,7 @@ button_DRV.grid(row=3, column=3)
     
 DRV_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
 DRV_voltage_entry.grid(row=3, column=1)
+DRV_voltage_entry.insert(0,1.0)
     
 DRV_submit = tk.Button(root, text="Submit", font=fontStyle,
                        command=lambda:submit(DRV, DRV_voltage_entry, DRV_text, 0x11, "9"))
@@ -294,6 +297,7 @@ button_LA.grid(row=4, column=3)
     
 LA_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
 LA_voltage_entry.grid(row=4, column=1)
+LA_voltage_entry.insert(0,1.0)
     
 LA_submit = tk.Button(root, text="Submit", font=fontStyle,
                       command=lambda:submit(LA, LA_voltage_entry, LA_text, 0x12, "a"))
@@ -311,6 +315,7 @@ button_BF.grid(row=5, column=3)
     
 BF_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
 BF_voltage_entry.grid(row=5, column=1)
+BF_voltage_entry.insert(0,1.0)
     
 BF_submit = tk.Button(root, text="Submit", font=fontStyle,
                       command=lambda:submit(BF, BF_voltage_entry, BF_text, 0x13, "b"))
@@ -327,6 +332,7 @@ button_BG.grid(row=6, column=3)
     
 BG_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
 BG_voltage_entry.grid(row=6, column=1)
+BG_voltage_entry.insert(0,1.8)
     
 BG_submit = tk.Button(root, text="Submit", font=fontStyle,
                       command=lambda:submit(BG, BG_voltage_entry, BG_text, 0x14, "c"))
@@ -343,6 +349,7 @@ button_PD.grid(row=7, column=3)
     
 PD_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
 PD_voltage_entry.grid(row=7, column=1)
+PD_voltage_entry.insert(0,3.3)
     
 PD_submit = tk.Button(root, text="Submit", font=fontStyle,
                       command=lambda:submit(PD, PD_voltage_entry, PD_text, 0x15,"d"))
@@ -359,6 +366,7 @@ button_V2_5.grid(row=8, column=3)
     
 V2_5_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
 V2_5_voltage_entry.grid(row=8, column=1)
+V2_5_voltage_entry.insert(0,2.5)
     
 V2_5_submit = tk.Button(root, text="Submit", font=fontStyle,
                         command=lambda:submit(V2_5, V2_5_voltage_entry, V2_5_text, 0x16, "e"))
@@ -375,26 +383,13 @@ button_V1_8.grid(row=9, column=3)
     
 V1_8_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
 V1_8_voltage_entry.grid(row=9, column=1)
+V1_8_voltage_entry.insert(0,1.8)
     
 V1_8_submit = tk.Button(root, text="Submit", font=fontStyle,
                         command=lambda:submit(V1_8, V1_8_voltage_entry, V1_8_text, 0x17, "f"))
 V1_8_submit.grid(row=9,column=4)
 
 calibrate(V1_8, 0x4ff, 0xfff,1.708, 2.993)
-    
-# INIT 1.2V
-V1_2 = PowerSupply(1.0, False,0,0)
-V1_2_text = "1.2V"
-button_V1_2 = tk.Button(root, text="OFF", font=fontStyle,
-                        command=lambda:isClicked(button_V1_2, V1_2_text, V1_2))
-button_V1_2.grid(row=10, column=3)
-    
-V1_2_voltage_entry = tk.Entry(root, width=5, font=fontStyle)
-V1_2_voltage_entry.grid(row=10, column=1)
-    
-V1_2_submit = tk.Button(root, text="Submit", font=fontStyle,
-                        command=lambda:submit(V1_2, V1_2_voltage_entry, 0x00, 0x00, V1_2_text))
-V1_2_submit.grid(row=10,column=4)
 
 '''
 click method used to activate clock 
@@ -418,7 +413,7 @@ def click(button):
 
 clock_button = tk.Button(root, text="OFF", font=fontStyle,
                          command=lambda:click(clock_button))
-clock_button.grid(row=11, column=3)
+clock_button.grid(row=10, column=3)
 
 # main
 init()
