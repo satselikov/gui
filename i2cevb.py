@@ -5,6 +5,8 @@ from smbus import SMBus
 import smbus
 import pigpio
 
+#run sudo pigpiod in terminal for clock to work
+
 tab1 = tk.Tk()
 tab1.title("Tab Widget")
 tabControl = ttk.Notebook(tab1)
@@ -12,8 +14,8 @@ tabControl = ttk.Notebook(tab1)
 tab1 = ttk.Frame(tabControl)
 tab2 = ttk.Frame(tabControl)
 
-tabControl.add(tab1, text="i2c")
-tabControl.add(tab2, text="power")
+tabControl.add(tab1, text="power")
+tabControl.add(tab2, text="i2c")
 tabControl.pack(expand=1, fill="both")
 
 fontStyle = tkFont.Font(family="Lucida Grande", size=15)
