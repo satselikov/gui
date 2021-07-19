@@ -9,7 +9,6 @@ EVB gui that will be sent out (cal is hard coded)
 all power supply working
 TODOs:
 -integrate into GUI.py
--make clock adjustable via GUI entry
 -combine with i2c.py
 '''
 
@@ -408,7 +407,6 @@ status_clock = False
 def click(button):
     global pi
     global status_clock
-    
     status_clock = not status_clock
     print_lines()
     if status_clock:
@@ -418,11 +416,24 @@ def click(button):
         button["text"] = "ON"
         pi.hardware_clock(4, 300000)
         print("Clock is ON")
-        
+        print("Default set to 300000")
+
+def submitclock(entry):
+    global pi
+    hz = int(entry.get())
+    pi.hardware_clock(4, hz)
+    print("clock frequency set to: ", entry.get())
+
+clock_entry = tk.Entry(root, width=7, font=fontStyle)
+clock_entry.grid(row=10, column=1)
 
 clock_button = tk.Button(root, text="OFF", font=fontStyle,
                          command=lambda:click(clock_button))
 clock_button.grid(row=10, column=3)
+
+clock_submit = tk.Button(root, text="Submit", font=fontStyle,
+                        command=lambda:submitclock(clock_entry))
+clock_submit.grid(row=10,column=4)
 
 # main
 init()
