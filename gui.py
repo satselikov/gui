@@ -3,6 +3,12 @@ from tkinter import *
 import tkinter.font as tkFont
 import smbus
 
+'''
+power supply GUI + calibration
+official version that is not modified 
+make changes to methods as in evb.py
+'''
+
 bus = smbus.SMBus(1)
 
 '''

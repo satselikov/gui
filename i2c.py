@@ -3,6 +3,13 @@ from tkinter import *
 import tkinter.font as tkFont
 from smbus import SMBus
 
+'''
+i2c GUI - change bits at certain addresses
+v1.0 
+TODOs:
+remove methods + add resuability
+'''
+
 root = tk.Tk()
 bus = SMBus(1)
 fontStyle = tkFont.Font(family="Lucida Grande", size=10)

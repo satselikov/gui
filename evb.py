@@ -4,6 +4,15 @@ import tkinter.font as tkFont
 import smbus
 import pigpio
 
+'''
+EVB gui that will be sent out (cal is hard coded)
+all power supply working
+TODOs:
+-integrate into GUI.py
+-make clock adjustable via GUI entry
+-combine with i2c.py
+'''
+
 bus = smbus.SMBus(1)
 
 '''
