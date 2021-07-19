@@ -1,11 +1,14 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import *
 import tkinter.font as tkFont
 from smbus import SMBus
 import smbus
 import pigpio
 
 #run sudo pigpiod in terminal for clock to work
+
+#TODO: add ADC reads 
 
 tab1 = tk.Tk()
 tab1.title("Tab Widget")
@@ -362,6 +365,7 @@ clock_button.grid(row=10, column=3)
 clock_submit = tk.Button(tab1, text="Submit", font=fontStyle,
                         command=lambda:submitclock(clock_entry))
 clock_submit.grid(row=10,column=4)
+
 
 def delete0x00():
     output_blank_0x00.delete(0, 'end')
