@@ -8,8 +8,17 @@ import pigpio
 
 #run sudo pigpiod in terminal for clock to work
 
-#TODO: add ADC reads 
+"""
+TODO: add ADC reads
 
+future versions:
+    - update all bits, no hard coded values + make them all the same order
+    - fix hard coding in the submit + (combine with LED?)
+    - remove code from i2c GUI
+    - update code in cal GUI
+"""
+
+#initialize tabs
 tab1 = tk.Tk()
 tab1.title("Tab Widget")
 tabControl = ttk.Notebook(tab1)
@@ -24,6 +33,7 @@ tabControl.pack(expand=1, fill="both")
 fontStyle = tkFont.Font(family="Lucida Grande", size=20)
 fontStyle1 = tkFont.Font(family="Lucida Grande", size=9)
 
+#main labels
 ttk.Label(tab1, text="Voltage", font=fontStyle).grid(row=0, column=1)
 ttk.Label(tab1, text="Current", font=fontStyle).grid(row=0, column=2)
 ttk.Label(tab1, text="Status", font=fontStyle).grid(row=0, column=3)
@@ -42,6 +52,9 @@ ttk.Label(tab1, text="Clock", font=fontStyle).grid(row=10, column=0)
 bus = smbus.SMBus(1)
 
 def init():
+    """
+    Initialize the board 
+    """
     bus.write_byte_data(0x74, 0x06, 0x00)
     bus.write_byte_data(0x74, 0x07, 0x00)
     bus.write_byte_data(0x74, 0x02, 0x00)
@@ -51,12 +64,36 @@ def init():
     bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])
     bus.write_i2c_block_data(0x11, 0x03, [0x00, 0x10])
 
+
 def print_lines():
+    """
+    Cleaner method for printing within terminal for serparation purposes
+    """
     print("------------------------")
     
 status = False
 master_bits = 0
 def isClicked(button, text, component, bitsON, bitsOFF, bits):
+    """
+    method used for changing the on/off buttons
+    
+    Args:
+        button: passed as an argument and corresponding button will change to either on or off text
+        text: COMPONENT_text EX; "TIA" or "DRV"
+        component: object instance of the Power Supply class (voltage, status, slope, offset)
+        bitsON: COMPONENT bits last 8 bits of on/off commands
+            TIA - 0X01
+            DRV - 0X02
+            LA - 0X04
+            BF - 0X08
+            BG - 0X10
+            PD - 0X20   
+            2.5 VDD - 0X40
+            1.8 VDD - 0X80
+        bitsOFF:
+            For ALL- OFF: 0x00
+        bits: 0x02 or 0x03
+    """
     global status
     global master_bits
     status = not status
@@ -77,6 +114,16 @@ def isClicked(button, text, component, bitsON, bitsOFF, bits):
         #print(text + " status is" , component.get_status())
         
 class PowerSupply:
+    """
+    Each component creates an instance of this class.
+    Getters and Setters for every variable included.
+
+    Args:
+        voltage: from voltage entry box
+        status: whether component is on/off
+        slope: calculated within calibration and used within submit
+        offset: calculated within calibration and used within submit
+    """
     def __init__(self, voltage, status, slope, offset):
         self.voltage = voltage
         self.status = status
@@ -100,6 +147,19 @@ class PowerSupply:
         self.offset = offset
 
 def submit(component, entry, text, bits, which):
+    """
+    Submit method - when you click the submit button per component entry
+    
+    Args:
+        component: object instance of the Power Supply class (voltage, status, slope, offset)
+        entry: entry value pulled from user input text box
+        text: COMPONENT_text EX; "TIA" or "DRV"
+        
+        Example: 0x11 0x10 0x85 0xca
+                bits: 0x10, 2nd group of 8bits to identify component
+                      which: 8 to identify component 
+    """
+    
     print_lines()
     print("Clicked submit for: ", text)
     if(len(entry.get()) == 0 ):
@@ -107,6 +167,9 @@ def submit(component, entry, text, bits, which):
     else:
         component.set_voltage(entry.get())
         print("Entry for", text, " :",  entry.get())
+
+#uncomment for prints
+        
 #     print("Status: ", component.get_status())
 #     print("Slope: ", component.get_slope())
 #     print("Offset: ", component.get_offset())
@@ -130,7 +193,18 @@ def submit(component, entry, text, bits, which):
     bus.write_i2c_block_data(0x11, bits, [DAC_1, DAC_2]) 
 
 def calibrate(component, MIN_DAC, MAX_DAC, min_value, max_value):
-
+    """
+    Calibration method called by the cal button
+    
+    Args:
+        Example: TIA_text, 0x10, 0x84, 0xff, 0x8f, 0xff, TIA
+        text: COMPONENT_text EX; "TIA" or "DRV"
+        MIN_DAC: hex value minimum
+        MAX_DAC: hex value maximum
+        min_value: float value voltage
+        max_value: float value voltage
+        component: object instance of the Power Supply class (voltage, status, slope, offset) 
+    """
     slope = (MAX_DAC-MIN_DAC)/(max_value - min_value)
     offset = -abs(slope)*min_value+MIN_DAC
     
@@ -153,6 +227,7 @@ TIA_submit.grid(row=1,column=4) #submit button used to grab component informatio
 
 calibrate(TIA, 0x4ff, 0xfff, 1.710, 2.994)
 
+#testing method used to hard code LED
 def LEDfunc():
     print("pressed led")
     bus.write_byte_data(0x74, 0x02, 0x02)
@@ -160,7 +235,16 @@ def LEDfunc():
     bus.write_byte_data(0x2f, 0x04, 0x14)
 
 def LED_sub(component, entry, text, address):
-    
+    """
+    special case submit for LED 10 bits altered instead of 16,
+    POT activation towards the end as well
+
+    Args:
+        component: LED object instance variable from PowerSupply class
+        entry: voltage entry grabbed from user input
+        text: "LED"
+        address: 0x2f 
+    """
     if(len(entry.get()) == 0 ):
         print("Entry for", text, " : None")
     else:
@@ -187,12 +271,11 @@ def LED_sub(component, entry, text, address):
     data_to_write_1 = int(data_to_write_1, 16) #conv back to hex
     data_to_write_2 = int(data_to_write_2, 16) #conv back to hex
     
-#     print(hex(data_to_write_1))
-#     print(hex(data_to_write_2))
-    
     bus.write_byte_data(0x2f, 0x1c, 0x03) #unlocks the POT
     bus.write_byte_data(0x2f, data_to_write_1, data_to_write_2) #writes using SMBUS
 
+
+# INIT LED
 LED = PowerSupply(4.4,False,0,0)
 LED_text = "LED"
 button_LED = tk.Button(tab1, text="OFF", font=fontStyle,
@@ -208,6 +291,7 @@ LED_submit = tk.Button(tab1, text="Submit", font=fontStyle,
 LED_submit.grid(row=2,column=4)
 
 calibrate(LED, 0x003, 0x014, 0.670, 3.889)
+
 
 # INIT DRV
 DRV = PowerSupply(1.0,False,0,0)
@@ -330,12 +414,16 @@ V1_8_submit.grid(row=9,column=4)
 
 calibrate(V1_8, 0x4ff, 0xfff,1.708, 2.993)
 
-'''
-click method used to activate clock 
-'''
+
 pi = pigpio.pi() 
 status_clock = False
 def click(button):
+    """
+    click method used to activate clock
+    
+    Args:
+        button: clock on/off passed in as a parameter
+    """
     global pi
     global status_clock
     status_clock = not status_clock
@@ -350,11 +438,17 @@ def click(button):
         print("Default set to 300000")
 
 def submitclock(entry):
+    """
+    submit helper for clock
+    
+    Args:
+        entry: hz
+    """
     global pi
     hz = int(entry.get())
     pi.hardware_clock(4, hz)
     print("clock frequency set to: ", entry.get())
-
+# INIT CLOCK Deafault - 300000
 clock_entry = tk.Entry(tab1, width=7, font=fontStyle)
 clock_entry.grid(row=10, column=1)
 
@@ -367,6 +461,7 @@ clock_submit = tk.Button(tab1, text="Submit", font=fontStyle,
 clock_submit.grid(row=10,column=4)
 
 
+# i2C GUI
 def delete0x00():
     output_blank_0x00.delete(0, 'end')
 def read0x00():
