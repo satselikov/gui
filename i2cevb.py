@@ -6,6 +6,17 @@ from smbus import SMBus
 import smbus
 import pigpio
 
+#define bit masking
+TIA_bits = 0x01
+LED_bits = 0x02
+DRV_bits = 0x04
+LA_bits = 0x08
+BF_bits = 0x10
+BG_bits = 0x20
+PD_bits = 0x40
+V2_5_bits = 0x80
+V1_8_bits = 0x1D
+
 #run sudo pigpiod in terminal for clock to work
 
 """
@@ -73,7 +84,7 @@ def print_lines():
     
 status = False
 master_bits = 0
-def isClicked(button, text, component, bitsON, bitsOFF, bits):
+def isClicked(button, text, component, bits, mask):
     """
     method used for changing the on/off buttons
     
@@ -81,18 +92,17 @@ def isClicked(button, text, component, bitsON, bitsOFF, bits):
         button: passed as an argument and corresponding button will change to either on or off text
         text: COMPONENT_text EX; "TIA" or "DRV"
         component: object instance of the Power Supply class (voltage, status, slope, offset)
-        bitsON: COMPONENT bits last 8 bits of on/off commands
-            TIA - 0X01
-            DRV - 0X02
-            LA - 0X04
-            BF - 0X08
-            BG - 0X10
-            PD - 0X20   
-            2.5 VDD - 0X40
-            1.8 VDD - 0X80
-        bitsOFF:
-            For ALL- OFF: 0x00
-        bits: 0x02 or 0x03
+        bits: 0x02 or 0x03 (location)
+        mask: set at the top (masks the certain bits)
+            TIA_bits = 0x01
+            LED_bits = 0x02
+            DRV_bits = 0x04
+            LA_bits = 0x08
+            BF_bits = 0x10
+            BG_bits = 0x20
+            PD_bits = 0x40
+            V2_5_bits = 0x80
+            V1_8_bits = 0x1D
     """
     global status
     global master_bits
@@ -101,17 +111,19 @@ def isClicked(button, text, component, bitsON, bitsOFF, bits):
     if status:
         button["text"] = "OFF"
         component.set_status(False)
-        master_bits = master_bits | bitsOFF
+        master_bits = master_bits & ~mask
+        print(master_bits)
         bus.write_byte_data(0x74, bits, master_bits)
         print(text + " is disabled.")
-        #print(text + " status is" , component.get_status())
+        print(text + " status is" , component.get_status())
     else:
         button["text"] = "ON"
         component.set_status(True)
-        master_bits = master_bits | bitsON
+        master_bits = master_bits | mask
+        print(master_bits)
         bus.write_byte_data(0x74, bits, master_bits)
         print(text + " is enabled.")
-        #print(text + " status is" , component.get_status())
+        print(text + " status is" , component.get_status())
         
 class PowerSupply:
     """
@@ -214,7 +226,7 @@ def calibrate(component, MIN_DAC, MAX_DAC, min_value, max_value):
 TIA = PowerSupply(1.8,False,0,0)
 TIA_text = "TIA"
 button_TIA = tk.Button(tab1, text="OFF", font=fontStyle,
-                       command=lambda:isClicked(button_TIA, TIA_text, TIA, 0x01, 0x00, 0x02))
+                       command=lambda:isClicked(button_TIA, TIA_text, TIA, 0x02, TIA_bits))
 button_TIA.grid(row=1, column=3) #ON/OFF button, triggers isClicked method
 
 TIA_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
@@ -279,7 +291,7 @@ def LED_sub(component, entry, text, address):
 LED = PowerSupply(4.4,False,0,0)
 LED_text = "LED"
 button_LED = tk.Button(tab1, text="OFF", font=fontStyle,
-                       command=lambda:isClicked(button_LED, LED_text, LED, 0x02, 0x00, 0x02))
+                       command=lambda:isClicked(button_LED, LED_text, LED, 0x02, LED_bits))
 button_LED.grid(row=2, column=3)
     
 LED_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
@@ -297,7 +309,7 @@ calibrate(LED, 0x003, 0x014, 0.670, 3.889)
 DRV = PowerSupply(1.0,False,0,0)
 DRV_text = "DRV"
 button_DRV = tk.Button(tab1, text="OFF", font=fontStyle,
-                       command=lambda:isClicked(button_DRV, DRV_text, DRV, 0x04, 0x00, 0x02))
+                       command=lambda:isClicked(button_DRV, DRV_text, DRV, 0x02, DRV_bits))
 button_DRV.grid(row=3, column=3)
     
 DRV_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
@@ -315,7 +327,7 @@ calibrate(DRV, 0x4ff, 0xfff, 1.142, 1.997)
 LA = PowerSupply(1.0, False,0,0)
 LA_text = "LA"
 button_LA = tk.Button(tab1, text="OFF", font=fontStyle,
-                      command=lambda:isClicked(button_LA, LA_text, LA, 0x08, 0x00, 0x02))
+                      command=lambda:isClicked(button_LA, LA_text, LA, 0x02, LA_bits))
 button_LA.grid(row=4, column=3)
     
 LA_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
@@ -333,7 +345,7 @@ calibrate(LA, 0x4ff, 0xfff, 1.142, 2.001)
 BF = PowerSupply(1.0, False,0,0)
 BF_text = "BF"
 button_BF = tk.Button(tab1, text="OFF", font=fontStyle,
-                      command=lambda:isClicked(button_BF, BF_text, BF, 0x10, 0x00, 0x02))
+                      command=lambda:isClicked(button_BF, BF_text, BF, 0x02, BF_bits))
 button_BF.grid(row=5, column=3)
     
 BF_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
@@ -350,7 +362,7 @@ calibrate(BF, 0x4ff, 0xfff, 1.143, 2.002)
 BG = PowerSupply(1.8, False,0,0)
 BG_text = "BG"
 button_BG = tk.Button(tab1, text="OFF", font=fontStyle,
-                      command=lambda:isClicked(button_BG, BG_text, BG, 0x20, 0x00, 0x02))
+                      command=lambda:isClicked(button_BG, BG_text, BG, 0x02, BG_bits))
 button_BG.grid(row=6, column=3)
     
 BG_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
@@ -367,7 +379,7 @@ calibrate(BG, 0x4ff, 0xfff,1.711, 2.991)
 PD = PowerSupply(3.3, False,0,0)
 PD_text = "PD"
 button_PD = tk.Button(tab1, text="OFF", font=fontStyle,
-                      command=lambda:isClicked(button_PD, PD_text, PD, 0x40, 0x00, 0x02))
+                      command=lambda:isClicked(button_PD, PD_text, PD, 0x02, PD_bits))
 button_PD.grid(row=7, column=3)
     
 PD_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
@@ -384,7 +396,7 @@ calibrate(PD, 0x9ff, 0xfff,3.057, 3.990)
 V2_5 = PowerSupply(3.3, False,0,0)
 V2_5_text = "2.5V"
 button_V2_5 = tk.Button(tab1, text="OFF", font=fontStyle,
-                        command=lambda:isClicked(button_V2_5, V2_5_text, V2_5, 0x80, 0x00, 0x02))
+                        command=lambda:isClicked(button_V2_5, V2_5_text, V2_5, 0x02, V2_5_bits))
 button_V2_5.grid(row=8, column=3)
     
 V2_5_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
@@ -401,7 +413,7 @@ calibrate(V2_5, 0x9ff, 0xfff,2.776, 3.626)
 V1_8 = PowerSupply(1.8, False,0,0)
 V1_8_text = "1.8V"
 button_V1_8 = tk.Button(tab1, text="OFF", font=fontStyle,
-                        command=lambda:isClicked(button_V1_8, V1_8_text, V1_8, 0x1D, 0x1C, 0x03))
+                        command=lambda:isClicked(button_V1_8, V1_8_text, V1_8, 0x03, V1_8_bits))
 button_V1_8.grid(row=9, column=3)
     
 V1_8_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
