@@ -15,7 +15,7 @@ BF_bits = 0x10
 BG_bits = 0x20
 PD_bits = 0x40
 V2_5_bits = 0x80
-V1_8_bits = 0x1D
+V1_8_bits = 0x01
 
 #run sudo pigpiod in terminal for clock to work
 
