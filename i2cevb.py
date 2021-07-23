@@ -202,6 +202,9 @@ def submit(component, entry, text, bits, which):
     DAC_1 = int(DAC_1, 16) #convert to int as a hex
     DAC_2 = int(DAC_2, 16)
     
+    print(hex(bits))
+    print(bin(DAC_1))
+    print(bin(DAC_2))
     bus.write_i2c_block_data(0x11, bits, [DAC_1, DAC_2]) 
 
 def calibrate(component, MIN_DAC, MAX_DAC, min_value, max_value):
@@ -376,7 +379,7 @@ BG_submit.grid(row=6,column=4)
 calibrate(BG, 0x4ff, 0xfff,1.711, 2.991)
     
 # INIT PD
-PD = PowerSupply(3.3, False,0,0)
+PD = PowerSupply(3.0, False,0,0)
 PD_text = "PD"
 button_PD = tk.Button(tab1, text="OFF", font=fontStyle,
                       command=lambda:isClicked(button_PD, PD_text, PD, 0x02, PD_bits))
@@ -384,7 +387,7 @@ button_PD.grid(row=7, column=3)
     
 PD_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
 PD_voltage_entry.grid(row=7, column=1)
-PD_voltage_entry.insert(0,3.3)
+PD_voltage_entry.insert(0,3.0)
     
 PD_submit = tk.Button(tab1, text="Submit", font=fontStyle,
                       command=lambda:submit(PD, PD_voltage_entry, PD_text, 0x15,"d"))
