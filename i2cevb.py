@@ -108,6 +108,7 @@ def isClicked(button, text, component, bits, mask):
     global master_bits
     status = not status
     print_lines()
+    #read off the bits if address is 0x03 for 1.8V component
     if bits == 0x03:
         master_bits = bus.read_byte_data(0x74, 0x03)
         
@@ -115,7 +116,7 @@ def isClicked(button, text, component, bits, mask):
         button["text"] = "OFF"
         component.set_status(False)
         master_bits = master_bits & ~mask
-        print("master_bits: ", master_bits)
+        #print("master_bits: ", master_bits)
         bus.write_byte_data(0x74, bits, master_bits)
         print(text + " is disabled.")
         print(text + " status is" , component.get_status())
@@ -123,7 +124,7 @@ def isClicked(button, text, component, bits, mask):
         button["text"] = "ON"
         component.set_status(True)
         master_bits = master_bits | mask
-        print("master_bits: ", master_bits)
+        #print("master_bits: ", master_bits)
         bus.write_byte_data(0x74, bits, master_bits)
         print(text + " is enabled.")
         print(text + " status is" , component.get_status())
@@ -205,9 +206,9 @@ def submit(component, entry, text, bits, which):
     DAC_1 = int(DAC_1, 16) #convert to int as a hex
     DAC_2 = int(DAC_2, 16)
 
-    print("Bits(hex): ", hex(bits))
-    print("DAC1: ", bin(DAC_1))
-    print("DAC2: ", bin(DAC_2))
+#     print("Bits(hex): ", hex(bits))
+#     print("DAC1: ", bin(DAC_1))
+#     print("DAC2: ", bin(DAC_2))
     bus.write_i2c_block_data(0x11, bits, [DAC_1, DAC_2]) 
 
 def calibrate(component, MIN_DAC, MAX_DAC, min_value, max_value):
