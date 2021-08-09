@@ -5,6 +5,7 @@ import tkinter.font as tkFont
 from smbus import SMBus
 import smbus
 import pigpio
+import time
 
 #define bit masking
 TIA_bits = 0x01
@@ -111,7 +112,8 @@ def isClicked(button, text, component, bits, mask):
     #read off the bits if address is 0x03 for 1.8V component
     if bits == 0x03:
         master_bits = bus.read_byte_data(0x74, 0x03)
-        
+    if bits == 0x02:
+        master_bits = bus.read_byte_data(0x74, 0x02)
     if status:
         button["text"] = "OFF"
         component.set_status(False)
@@ -478,6 +480,22 @@ clock_button.grid(row=10, column=3)
 clock_submit = tk.Button(tab1, text="Submit", font=fontStyle,
                         command=lambda:submitclock(clock_entry))
 clock_submit.grid(row=10,column=4)
+
+def adc():
+    print("clicked")
+    bus.write_byte_data(0x74, 0x03, 0x2f)
+    bus.write_i2c_block_data(0x11, 0x04, [0x00, 0xff])
+    bus.write_i2c_block_data(0x11, 0x02, [0x00, 0xff])
+    
+    bus.write_byte(0x11, 0x40)
+    time.sleep(5)
+    bus.read_block_data(0x11, 4)
+    #print(data)
+    #bus.read_word_data(0x11, 0x40)
+    
+adc_button = tk.Button(tab1, text="ADC", font=fontStyle,
+                       command=lambda:adc())
+adc_button.grid(row=11, column=4)
 
 
 # i2C GUI
