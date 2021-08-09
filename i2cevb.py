@@ -22,6 +22,7 @@ V1_8_bits = 0x01
 
 """
 TODO: add ADC reads
+add reset
 
 future versions:
     - update all bits, no hard coded values + make them all the same order
@@ -109,7 +110,7 @@ def isClicked(button, text, component, bits, mask):
     global master_bits
     status = not status
     print_lines()
-    #read off the bits if address is 0x03 for 1.8V component
+    #read off the bits if address is 0x02 or 0x03 to only change bits 
     if bits == 0x03:
         master_bits = bus.read_byte_data(0x74, 0x03)
     if bits == 0x02:
