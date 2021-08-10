@@ -49,6 +49,7 @@ fontStyle1 = tkFont.Font(family="Lucida Grande", size=9)
 #main labels
 ttk.Label(tab1, text="Voltage", font=fontStyle).grid(row=0, column=1)
 ttk.Label(tab1, text="Status", font=fontStyle).grid(row=0, column=3)
+
 ttk.Label(tab1, text="Current", font=fontStyle).grid(row=0, column=5)
 ttk.Label(tab1, text="Voltage", font=fontStyle).grid(row=0, column=6)
 
@@ -484,7 +485,8 @@ clock_submit = tk.Button(tab1, text="Submit", font=fontStyle,
                         command=lambda:submitclock(clock_entry))
 clock_submit.grid(row=10,column=4)
 
-
+TIA_ADC_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
+TIA_ADC_voltage_entry.grid(row=1, column=6)
 
 
 def adc_voltage_init():
@@ -508,7 +510,10 @@ def adc_voltage_init():
     print(val)
     val = convert_voltage(val)
     print(val)
-    
+    val = round(val,3)
+    TIA_ADC_voltage_entry.delete(0, 'end')
+    TIA_ADC_voltage_entry.insert(0,val)
+
 
 def endian_switch(val):
     val1 = val[:2]
