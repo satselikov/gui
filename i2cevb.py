@@ -471,6 +471,7 @@ def submitclock(entry):
     hz = int(entry.get())
     pi.hardware_clock(4, hz)
     print("clock frequency set to: ", entry.get())
+    
 # INIT CLOCK Deafault - 300000
 clock_entry = tk.Entry(tab1, width=7, font=fontStyle)
 clock_entry.grid(row=10, column=1)
@@ -499,21 +500,28 @@ def adc_voltage_init():
     print(val)
     if(len(val) == 3):
         val = '0' + val
-        print(val)
     if(len(val) == 2):
         val = '00' + val
-        print(val)
     if(len(val) == 1):
         val = '000' + val
-        print(val)
-        
+    val = endian_switch(val)
+    print(val)
+    val = convert_voltage(val)
+    print(val)
+    
+
+def endian_switch(val):
+    val1 = val[:2]
+    val2 = val[2:]
+    val = val2 + val1
+    return val
+
+def convert_voltage(val):
+    return (int(val, 16)*2.5)/0xfff
 
 adc_button = tk.Button(tab1, text="ADC", font=fontStyle,
                        command=lambda:adc_voltage_init())
 adc_button.grid(row=11, column=4)
-
-
-
 
 
 # i2C GUI
