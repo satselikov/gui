@@ -1,4 +1,2 @@
-val = 1.799993
-val = round(val,2)
-
-print(val)
+val = '1666'
+print(val[1:])

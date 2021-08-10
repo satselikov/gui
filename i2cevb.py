@@ -488,31 +488,32 @@ clock_submit.grid(row=10,column=4)
 TIA_ADC_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
 TIA_ADC_voltage_entry.grid(row=1, column=6)
 
+DRV_ADC_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
+DRV_ADC_voltage_entry.grid(row=3, column=6)
 
-def adc_voltage_init():
-    print("ADC voltage")
-    bus.write_byte_data(0x74, 0x03, 0x2f)
-    bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])
-    bus.write_i2c_block_data(0x11, 0x04, [0x00, 0xff])
-    bus.write_i2c_block_data(0x11, 0x02, [0x00, 0x01])
+LA_ADC_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
+LA_ADC_voltage_entry.grid(row=4, column=6)
+
+def adc_voltage_init(channel, entry):
+    bus.write_byte_data(0x74, 0x03, 0x2f )                # Set address A0_AN1 to talk to U25
+    bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])    # Enable reference
+    bus.write_i2c_block_data(0x11, 0x04, [0x00, 0xff])    # Set all pins as ADC
+    bus.write_i2c_block_data(0x11, 0x02, [0x00, channel]) # X channel for conversion
+    val = bus.read_word_data(0x11, 0x40)                  # Read single channel and convert to voltage
     
-    val = bus.read_word_data(0x11, 0x40)
+    #parsing
     val = str(hex(val))
-    val = val[2:]
     print(val)
-    if(len(val) == 3):
-        val = '0' + val
-    if(len(val) == 2):
-        val = '00' + val
-    if(len(val) == 1):
-        val = '000' + val
+    val = val[2:]
+    missing_zeros(val)
+    print(val)
     val = endian_switch(val)
     print(val)
     val = convert_voltage(val)
-    print(val)
     val = round(val,3)
-    TIA_ADC_voltage_entry.delete(0, 'end')
-    TIA_ADC_voltage_entry.insert(0,val)
+    print(val)
+    entry.delete(0, 'end')
+    entry.insert(0,val)
 
 
 def endian_switch(val):
@@ -522,10 +523,22 @@ def endian_switch(val):
     return val
 
 def convert_voltage(val):
+    val = val[1:]
     return (int(val, 16)*2.5)/0xfff
 
+def missing_zeros(val):
+    if(len(val) == 3):
+        val = '0' + val
+    if(len(val) == 2):
+        val = '00' + val
+    if(len(val) == 1):
+        val = '000' + val
+    return val
+
 adc_button = tk.Button(tab1, text="ADC", font=fontStyle,
-                       command=lambda:adc_voltage_init())
+                       command=lambda:[adc_voltage_init(0x01, TIA_ADC_voltage_entry),
+                                       adc_voltage_init(0x02, DRV_ADC_voltage_entry),
+                                       adc_voltage_init(0x04, LA_ADC_voltage_entry)])
 adc_button.grid(row=11, column=4)
 
 
