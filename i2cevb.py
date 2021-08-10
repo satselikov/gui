@@ -48,8 +48,9 @@ fontStyle1 = tkFont.Font(family="Lucida Grande", size=9)
 
 #main labels
 ttk.Label(tab1, text="Voltage", font=fontStyle).grid(row=0, column=1)
-ttk.Label(tab1, text="Current", font=fontStyle).grid(row=0, column=2)
 ttk.Label(tab1, text="Status", font=fontStyle).grid(row=0, column=3)
+ttk.Label(tab1, text="Current", font=fontStyle).grid(row=0, column=5)
+ttk.Label(tab1, text="Voltage", font=fontStyle).grid(row=0, column=6)
 
 ttk.Label(tab1, text="TIA", font=fontStyle).grid(row=1, column=0)
 ttk.Label(tab1, text="LED", font=fontStyle).grid(row=2, column=0)
@@ -482,21 +483,37 @@ clock_submit = tk.Button(tab1, text="Submit", font=fontStyle,
                         command=lambda:submitclock(clock_entry))
 clock_submit.grid(row=10,column=4)
 
-def adc():
-    print("clicked")
+
+
+
+def adc_voltage_init():
+    print("ADC voltage")
     bus.write_byte_data(0x74, 0x03, 0x2f)
+    bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])
     bus.write_i2c_block_data(0x11, 0x04, [0x00, 0xff])
-    bus.write_i2c_block_data(0x11, 0x02, [0x00, 0xff])
+    bus.write_i2c_block_data(0x11, 0x02, [0x00, 0x01])
     
-    bus.write_byte(0x11, 0x40)
-    time.sleep(5)
-    bus.read_block_data(0x11, 4)
-    #print(data)
-    #bus.read_word_data(0x11, 0x40)
-    
+    val = bus.read_word_data(0x11, 0x40)
+    val = str(hex(val))
+    val = val[2:]
+    print(val)
+    if(len(val) == 3):
+        val = '0' + val
+        print(val)
+    if(len(val) == 2):
+        val = '00' + val
+        print(val)
+    if(len(val) == 1):
+        val = '000' + val
+        print(val)
+        
+
 adc_button = tk.Button(tab1, text="ADC", font=fontStyle,
-                       command=lambda:adc())
+                       command=lambda:adc_voltage_init())
 adc_button.grid(row=11, column=4)
+
+
+
 
 
 # i2C GUI
