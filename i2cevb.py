@@ -122,6 +122,8 @@ def isClicked(button, text, component, bits, mask):
         component.set_status(False)
         master_bits = master_bits & ~mask
         #print("master_bits: ", master_bits)
+#         print("0x03 DAC: ", hex(bus.read_byte_data(0x74, 0x03)))
+#         print("0x02 DAC: ", hex(bus.read_byte_data(0x74, 0x02)))
         bus.write_byte_data(0x74, bits, master_bits)
         print(text + " is disabled.")
         print(text + " status is" , component.get_status())
@@ -130,6 +132,8 @@ def isClicked(button, text, component, bits, mask):
         component.set_status(True)
         master_bits = master_bits | mask
         #print("master_bits: ", master_bits)
+#         print("0x03 DAC: ", hex(bus.read_byte_data(0x74, 0x03)))
+#         print("0x02 DAC: ", hex(bus.read_byte_data(0x74, 0x02)))
         bus.write_byte_data(0x74, bits, master_bits)
         print(text + " is enabled.")
         print(text + " status is" , component.get_status())
@@ -511,6 +515,8 @@ ADC_1_8_voltage_entry.grid(row=9, column=6)
 
 def adc_voltage_init(channel, entry, text):
     bus.write_byte_data(0x74, 0x03, 0x2f)                 # Set address A0_AN1 to talk to U25
+#     print("0x03: ", hex(bus.read_byte_data(0x74, 0x03)))
+#     print("0x02: ", hex(bus.read_byte_data(0x74, 0x02)))
     bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])    # Enable reference
     bus.write_i2c_block_data(0x11, 0x04, [0x00, 0xff])    # Set all pins as ADC
     bus.write_i2c_block_data(0x11, 0x02, [0x00, channel]) # X channel for conversion
