@@ -516,16 +516,17 @@ def adc_voltage_init(channel, entry, text):
     bus.write_i2c_block_data(0x11, 0x02, [0x00, channel]) # X channel for conversion
     
     val = bus.read_word_data(0x11, 0x40)                  # Read single channel and convert to voltage
-
+    
+    print("hex: ", hex(val))
     #parsing
     val = str(hex(val))
     val = val[2:]
-    missing_zeros(val)
+    val = missing_zeros(val)
     val = endian_switch(val)
-    print(val, text)
     val = convert_voltage(val)
-    print(val, text)
     val = round(val,3)
+    if(text.__eq__("PD") or text.__eq__("2_5")):
+        val = val*2
     entry.delete(0, 'end')
     entry.insert(0,val)
 
@@ -537,7 +538,6 @@ def endian_switch(val):
     return val
 
 def convert_voltage(val):
-    print(val)
     val = val[1:]
     return (int(val, 16)*2.5)/0xfff
 
