@@ -514,8 +514,9 @@ def adc_voltage_init(channel, entry, text):
     bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])    # Enable reference
     bus.write_i2c_block_data(0x11, 0x04, [0x00, 0xff])    # Set all pins as ADC
     bus.write_i2c_block_data(0x11, 0x02, [0x00, channel]) # X channel for conversion
-    val = bus.read_word_data(0x11, 0x40)                  # Read single channel and convert to voltage
     
+    val = bus.read_word_data(0x11, 0x40)                  # Read single channel and convert to voltage
+
     #parsing
     val = str(hex(val))
     val = val[2:]
