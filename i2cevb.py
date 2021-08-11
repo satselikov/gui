@@ -568,9 +568,9 @@ bf_read_button = tk.Button(tab1, text="read", font=fontStyle,
                             command=lambda: adc_voltage_init(0x08, BF_ADC_voltage_entry, "BF"))
 bf_read_button.grid(row=5, column=7)
 
-# bg_read_button = tk.Button(tab1, text="read", font=fontStyle,
-#                             command=lambda: adc_voltage_init(0x10, BG_ADC_voltage_entry, "BG"))
-# bg_read_button.grid(row=6, column=7)
+bg_read_button = tk.Button(tab1, text="read", font=fontStyle,
+                            command=lambda: adc_voltage_init(0x10, BG_ADC_voltage_entry, "BG"))
+bg_read_button.grid(row=6, column=7)
 
 pd_read_button = tk.Button(tab1, text="read", font=fontStyle,
                             command=lambda: adc_voltage_init(0x20, PD_ADC_voltage_entry, "PD"))
