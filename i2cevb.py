@@ -85,7 +85,14 @@ def print_lines():
     Cleaner method for printing within terminal for serparation purposes
     """
     print("------------------------")
+
+def chip_select(address):
+    master_bits = bus.read_byte_data(0x74, 0x03)
+    master_bits = master_bits & 0x0f
+    master_bits = master_bits | address
+    bus.write_byte_data(0x74, 0x03, master_bits)
     
+
 status = False
 master_bits = 0
 def isClicked(button, text, component, bits, mask):
@@ -112,6 +119,7 @@ def isClicked(button, text, component, bits, mask):
     global master_bits 
     status = not status
     print_lines()
+    chip_select(0x10)
     #read off the bits if address is 0x02 or 0x03 to only change bits 
     if bits == 0x03:
         master_bits = bus.read_byte_data(0x74, 0x03)
@@ -131,7 +139,8 @@ def isClicked(button, text, component, bits, mask):
         button["text"] = "ON"
         component.set_status(True)
         master_bits = master_bits | mask
-        #print("master_bits: ", master_bits)
+        print("master_bits: ", hex(master_bits))
+        print(0x02 == 0x2)
 #         print("0x03 DAC: ", hex(bus.read_byte_data(0x74, 0x03)))
 #         print("0x02 DAC: ", hex(bus.read_byte_data(0x74, 0x02)))
         bus.write_byte_data(0x74, bits, master_bits)
@@ -186,7 +195,7 @@ def submit(component, entry, text, bits, which):
     """
     
     print_lines()
-    
+    chip_select(0x10)
     print("Clicked submit for: ", text)
     if(len(entry.get()) == 0 ):
         print("Entry for", text, " : None")
@@ -515,7 +524,7 @@ ADC_1_8_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
 ADC_1_8_voltage_entry.grid(row=9, column=6)
 
 def adc_voltage_init(channel, entry, text):
-    bus.write_byte_data(0x74, 0x03, 0x2f)                 # Set address A0_AN1 to talk to U25
+    chip_select(0x20)                                     # Set address A0_AN1 to talk to U25
     bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])    # Enable reference
     bus.write_i2c_block_data(0x11, 0x04, [0x00, 0xff])    # Set all pins as ADC
     bus.write_i2c_block_data(0x11, 0x02, [0x00, channel]) # X channel for conversion
