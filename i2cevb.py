@@ -7,6 +7,21 @@ import smbus
 import pigpio
 import time
 
+#run sudo pigpiod in terminal for clock to work
+
+"""
+TODO: add ADC reads
+voltages + done
+add reset
+
+future versions:
+    - update all bits, no hard coded values + make them all the same order
+    - fix hard coding in the submit + (combine with LED?)
+    - remove code from i2c GUI
+    - update code in cal GUI
+    - importing from json or something
+"""
+
 #define bit masking
 TIA_bits = 0x01
 LED_bits = 0x02
@@ -17,27 +32,6 @@ BG_bits = 0x20
 PD_bits = 0x40
 V2_5_bits = 0x80
 V1_8_bits = 0x01
-
-#run sudo pigpiod in terminal for clock to work
-
-"""
-split files into
-    driver
-    power
-    adc
-    dac
-    
-    2nd gui
-
-TODO: add ADC reads
-add reset
-
-future versions:
-    - update all bits, no hard coded values + make them all the same order
-    - fix hard coding in the submit + (combine with LED?)
-    - remove code from i2c GUI
-    - update code in cal GUI
-"""
 
 #initialize tabs
 tab1 = tk.Tk()
@@ -54,7 +48,7 @@ tabControl.pack(expand=1, fill="both")
 fontStyle = tkFont.Font(family="Lucida Grande", size=20)
 fontStyle1 = tkFont.Font(family="Lucida Grande", size=9)
 
-#main labels
+#main labels on tab1 Power Supply GUI
 ttk.Label(tab1, text="Voltage", font=fontStyle).grid(row=0, column=1)
 ttk.Label(tab1, text="Status", font=fontStyle).grid(row=0, column=3)
 
@@ -87,74 +81,6 @@ def init():
     bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])
     bus.write_i2c_block_data(0x11, 0x03, [0x00, 0x10])
 
-
-def print_lines():
-    """
-    Cleaner method for printing within terminal for serparation purposes
-    """
-    print("------------------------")
-
-def chip_select(address):
-    master_bits = bus.read_byte_data(0x74, 0x03)
-    master_bits = master_bits & 0x0f
-    master_bits = master_bits | address
-    bus.write_byte_data(0x74, 0x03, master_bits)
-    
-
-status = False
-master_bits = 0
-def isClicked(button, text, component, bits, mask):
-    """
-    method used for changing the on/off buttons
-    
-    Args:
-        button: passed as an argument and corresponding button will change to either on or off text
-        text: COMPONENT_text EX; "TIA" or "DRV"
-        component: object instance of the Power Supply class (voltage, status, slope, offset)
-        bits: 0x02 or 0x03 (location)
-        mask: set at the top (masks the certain bits)
-            TIA_bits = 0x01
-            LED_bits = 0x02
-            DRV_bits = 0x04
-            LA_bits = 0x08
-            BF_bits = 0x10
-            BG_bits = 0x20
-            PD_bits = 0x40
-            V2_5_bits = 0x80
-            V1_8_bits = 0x01
-    """
-    global status
-    global master_bits 
-    status = not status
-    print_lines()
-    chip_select(0x10)
-    #read off the bits if address is 0x02 or 0x03 to only change bits 
-    if bits == 0x03:
-        master_bits = bus.read_byte_data(0x74, 0x03)
-    if bits == 0x02:
-        master_bits = bus.read_byte_data(0x74, 0x02)
-    if status:
-        button["text"] = "OFF"
-        component.set_status(False)
-        master_bits = master_bits & ~mask
-        #print("master_bits: ", master_bits)
-#         print("0x03 DAC: ", hex(bus.read_byte_data(0x74, 0x03)))
-#         print("0x02 DAC: ", hex(bus.read_byte_data(0x74, 0x02)))
-        bus.write_byte_data(0x74, bits, master_bits)
-        print(text + " is disabled.")
-        print(text + " status is" , component.get_status())
-    else:
-        button["text"] = "ON"
-        component.set_status(True)
-        master_bits = master_bits | mask
-        print("master_bits: ", hex(master_bits))
-        print(0x02 == 0x2)
-#         print("0x03 DAC: ", hex(bus.read_byte_data(0x74, 0x03)))
-#         print("0x02 DAC: ", hex(bus.read_byte_data(0x74, 0x02)))
-        bus.write_byte_data(0x74, bits, master_bits)
-        print(text + " is enabled.")
-        print(text + " status is" , component.get_status())
-        
 class PowerSupply:
     """
     Each component creates an instance of this class.
@@ -188,6 +114,77 @@ class PowerSupply:
     def set_offset(self, offset):
         self.offset = offset
 
+def print_lines():
+    """
+    Cleaner method for printing within terminal for serparation purposes
+    """
+    print("------------------------")
+
+def chip_select(address):
+    """
+    Method called by DAC + ADC to select chip before any command executed
+    """
+    master_bits = bus.read_byte_data(0x74, 0x03)
+    master_bits = master_bits & 0x0f
+    master_bits = master_bits | address
+    bus.write_byte_data(0x74, 0x03, master_bits)
+    
+status = False
+master_bits = 0
+def isClicked(button, text, component, bits, mask):
+    """
+    method used for changing the on/off buttons
+    
+    Args:
+        button: passed as an argument and corresponding button will change to either on or off text
+        text: COMPONENT_text EX; "TIA" or "DRV"
+        component: object instance of the Power Supply class (voltage, status, slope, offset)
+        bits: 0x02 or 0x03 (location)
+        mask: set at the top (masks the certain bits)
+            TIA_bits = 0x01
+            LED_bits = 0x02
+            DRV_bits = 0x04
+            LA_bits = 0x08
+            BF_bits = 0x10
+            BG_bits = 0x20
+            PD_bits = 0x40
+            V2_5_bits = 0x80
+            V1_8_bits = 0x01
+    """
+    global status
+    global master_bits 
+    status = not status
+    
+    print_lines()
+    chip_select(0x10) #0x10 for DAC
+    
+    #read off the bits if address is 0x02 or 0x03 to only change bits 
+    if bits == 0x03:
+        master_bits = bus.read_byte_data(0x74, 0x03)
+    if bits == 0x02:
+        master_bits = bus.read_byte_data(0x74, 0x02)
+        
+    if status:
+        button["text"] = "OFF"
+        component.set_status(False)
+        master_bits = master_bits & ~mask
+#         print("master_bits: ", master_bits)
+#         print("0x03 DAC: ", hex(bus.read_byte_data(0x74, 0x03)))
+#         print("0x02 DAC: ", hex(bus.read_byte_data(0x74, 0x02)))
+        bus.write_byte_data(0x74, bits, master_bits)
+        print(text + " is disabled.")
+        print(text + " status is" , component.get_status())
+    else:
+        button["text"] = "ON"
+        component.set_status(True)
+        master_bits = master_bits | mask
+#         print("master_bits: ", hex(master_bits))
+#         print("0x03 DAC: ", hex(bus.read_byte_data(0x74, 0x03)))
+#         print("0x02 DAC: ", hex(bus.read_byte_data(0x74, 0x02)))
+        bus.write_byte_data(0x74, bits, master_bits)
+        print(text + " is enabled.")
+        print(text + " status is" , component.get_status())
+        
 def submit(component, entry, text, bits, which):
     """
     Submit method - when you click the submit button per component entry
@@ -204,14 +201,14 @@ def submit(component, entry, text, bits, which):
     
     print_lines()
     chip_select(0x10)
+    
     print("Clicked submit for: ", text)
+    
     if(len(entry.get()) == 0 ):
         print("Entry for", text, " : None")
     else:
         component.set_voltage(entry.get())
         print("Entry for", text, " :",  entry.get())
-
-#uncomment for prints
         
 #     print("Status: ", component.get_status())
 #     print("Slope: ", component.get_slope())
@@ -256,7 +253,8 @@ def calibrate(component, MIN_DAC, MAX_DAC, min_value, max_value):
     
     component.set_slope(slope)
     component.set_offset(offset)
-    
+
+# INIT TIA
 TIA = PowerSupply(1.8,False,0,0)
 TIA_text = "TIA"
 button_TIA = tk.Button(tab1, text="OFF", font=fontStyle,
@@ -320,7 +318,6 @@ def LED_sub(component, entry, text, address):
     bus.write_byte_data(0x2f, 0x1c, 0x03) #unlocks the POT
     bus.write_byte_data(0x2f, data_to_write_1, data_to_write_2) #writes using SMBUS
 
-
 # INIT LED
 LED = PowerSupply(4.4,False,0,0)
 LED_text = "LED"
@@ -337,7 +334,6 @@ LED_submit = tk.Button(tab1, text="Submit", font=fontStyle,
 LED_submit.grid(row=2,column=4)
 
 calibrate(LED, 0x003, 0x014, 0.670, 3.889)
-
 
 # INIT DRV
 DRV = PowerSupply(1.0,False,0,0)
@@ -356,7 +352,6 @@ DRV_submit.grid(row=3,column=4)
 
 calibrate(DRV, 0x4ff, 0xfff, 1.142, 1.997)
 
-
 # INIT LA
 LA = PowerSupply(1.0, False,0,0)
 LA_text = "LA"
@@ -373,7 +368,6 @@ LA_submit = tk.Button(tab1, text="Submit", font=fontStyle,
 LA_submit.grid(row=4,column=4)
 
 calibrate(LA, 0x4ff, 0xfff, 1.142, 2.001)
-
 
 # INIT BF
 BF = PowerSupply(1.0, False,0,0)
@@ -460,7 +454,6 @@ V1_8_submit.grid(row=9,column=4)
 
 calibrate(V1_8, 0x4ff, 0xfff,1.708, 2.993)
 
-
 pi = pigpio.pi() 
 status_clock = False
 def click(button):
@@ -532,6 +525,14 @@ ADC_1_8_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
 ADC_1_8_voltage_entry.grid(row=9, column=6)
 
 def adc_voltage_init(channel, entry, text):
+    """
+    ADC voltage init method
+    
+    Args:
+        -channel: select channel for conversion
+        -entry: GUI entry to output text
+        -text: attach name of component for debugging purposes
+    """
     chip_select(0x20)                                     # Set address A0_AN1 to talk to U25
     bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])    # Enable reference
     bus.write_i2c_block_data(0x11, 0x04, [0x00, 0xff])    # Set all pins as ADC
@@ -539,7 +540,8 @@ def adc_voltage_init(channel, entry, text):
     
     val = bus.read_word_data(0x11, 0x40)                  # Read single channel and convert to voltage
     
-    print("hex: ", hex(val))
+#     print("hex: ", hex(val))
+
     #parsing
     val = str(hex(val))
     val = val[2:]
@@ -547,23 +549,45 @@ def adc_voltage_init(channel, entry, text):
     val = endian_switch(val)
     val = convert_voltage(val)
     val = round(val,3)
-    if(text.__eq__("PD") or text.__eq__("2_5")):
+    if(text.__eq__("PD") or text.__eq__("2_5")): 
         val = val*2
     entry.delete(0, 'end')
     entry.insert(0,val)
 
 
 def endian_switch(val):
+    """
+    Helper method for ADC to convert 16 bit hex digit from little endian to big endian
+    
+    Args:
+        -val: hex val to be converted
+    """
     val1 = val[:2]
     val2 = val[2:]
     val = val2 + val1
     return val
 
 def convert_voltage(val):
+    """
+    Helper Method for ADC
+    
+    Args:
+        -val: voltage value to be converted
+    """
     val = val[1:]
     return (int(val, 16)*2.5)/0xfff
 
 def missing_zeros(val):
+    """
+    Adds the leading zeros if the value is only 3,2,1, or 0. Hex must be 4 digits
+    
+    Example: 0x212 changed to 0x0212
+             0x11 changed to 0x0011
+             0x4 changed to 0x0004
+    
+    Args:
+        -val: hex val to be converted
+    """
     if(len(val) == 3):
         val = '0' + val
     if(len(val) == 2):
@@ -574,6 +598,7 @@ def missing_zeros(val):
         val = '0000' + val
     return val
 
+# INIT read buttons for ADC (can change to one button)
 tia_read_button = tk.Button(tab1, text="read", font=fontStyle,
                             command=lambda: adc_voltage_init(0x01, TIA_ADC_voltage_entry, "TIA"))
 tia_read_button.grid(row=1, column=7)
@@ -606,6 +631,7 @@ read18_button = tk.Button(tab1, text="read", font=fontStyle,
                             command=lambda: adc_voltage_init(0x80, ADC_1_8_voltage_entry, "1_8"))
 read18_button.grid(row=9, column=7)
 
+#single ADC button to call all functions 
 adc_button = tk.Button(tab1, text="ADC", font=fontStyle,
                        command=lambda:[adc_voltage_init(0x01, TIA_ADC_voltage_entry, "TIA"),
                                        adc_voltage_init(0x02, DRV_ADC_voltage_entry, "DRV"),
