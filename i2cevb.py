@@ -21,6 +21,14 @@ V1_8_bits = 0x01
 #run sudo pigpiod in terminal for clock to work
 
 """
+split files into
+    driver
+    power
+    adc
+    dac
+    
+    2nd gui
+
 TODO: add ADC reads
 add reset
 
