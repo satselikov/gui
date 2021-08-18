@@ -49,11 +49,11 @@ fontStyle = tkFont.Font(family="Lucida Grande", size=20)
 fontStyle1 = tkFont.Font(family="Lucida Grande", size=9)
 
 #main labels on tab1 Power Supply GUI
-ttk.Label(tab1, text="Voltage", font=fontStyle).grid(row=0, column=1)
+ttk.Label(tab1, text="Set V", font=fontStyle).grid(row=0, column=1)
 ttk.Label(tab1, text="Status", font=fontStyle).grid(row=0, column=3)
 
-ttk.Label(tab1, text="Current", font=fontStyle).grid(row=0, column=5)
-ttk.Label(tab1, text="Voltage", font=fontStyle).grid(row=0, column=6)
+ttk.Label(tab1, text="V", font=fontStyle).grid(row=0, column=6)
+ttk.Label(tab1, text="C", font=fontStyle).grid(row=0, column=7)
 
 ttk.Label(tab1, text="TIA", font=fontStyle).grid(row=1, column=0)
 ttk.Label(tab1, text="LED", font=fontStyle).grid(row=2, column=0)
@@ -599,40 +599,40 @@ def missing_zeros(val):
     return val
 
 # INIT read buttons for ADC (can change to one button)
-tia_read_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x01, TIA_ADC_voltage_entry, "TIA"))
-tia_read_button.grid(row=1, column=7)
-
-drv_read_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x02, DRV_ADC_voltage_entry, "DRV"))
-drv_read_button.grid(row=3, column=7)
-
-la_read_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x04, LA_ADC_voltage_entry, "LA"))
-la_read_button.grid(row=4, column=7)
-
-bf_read_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x08, BF_ADC_voltage_entry, "BF"))
-bf_read_button.grid(row=5, column=7)
-
-bg_read_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x10, BG_ADC_voltage_entry, "BG"))
-bg_read_button.grid(row=6, column=7)
-
-pd_read_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x20, PD_ADC_voltage_entry, "PD"))
-pd_read_button.grid(row=7, column=7)
-
-read25_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x40, ADC_2_5_voltage_entry, "2_5"))
-read25_button.grid(row=8, column=7)
-
-read18_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x80, ADC_1_8_voltage_entry, "1_8"))
-read18_button.grid(row=9, column=7)
+# tia_read_button = tk.Button(tab1, text="read", font=fontStyle,
+#                             command=lambda: adc_voltage_init(0x01, TIA_ADC_voltage_entry, "TIA"))
+# tia_read_button.grid(row=1, column=7)
+# 
+# drv_read_button = tk.Button(tab1, text="read", font=fontStyle,
+#                             command=lambda: adc_voltage_init(0x02, DRV_ADC_voltage_entry, "DRV"))
+# drv_read_button.grid(row=3, column=7)
+# 
+# la_read_button = tk.Button(tab1, text="read", font=fontStyle,
+#                             command=lambda: adc_voltage_init(0x04, LA_ADC_voltage_entry, "LA"))
+# la_read_button.grid(row=4, column=7)
+# 
+# bf_read_button = tk.Button(tab1, text="read", font=fontStyle,
+#                             command=lambda: adc_voltage_init(0x08, BF_ADC_voltage_entry, "BF"))
+# bf_read_button.grid(row=5, column=7)
+# 
+# bg_read_button = tk.Button(tab1, text="read", font=fontStyle,
+#                             command=lambda: adc_voltage_init(0x10, BG_ADC_voltage_entry, "BG"))
+# bg_read_button.grid(row=6, column=7)
+# 
+# pd_read_button = tk.Button(tab1, text="read", font=fontStyle,
+#                             command=lambda: adc_voltage_init(0x20, PD_ADC_voltage_entry, "PD"))
+# pd_read_button.grid(row=7, column=7)
+# 
+# read25_button = tk.Button(tab1, text="read", font=fontStyle,
+#                             command=lambda: adc_voltage_init(0x40, ADC_2_5_voltage_entry, "2_5"))
+# read25_button.grid(row=8, column=7)
+# 
+# read18_button = tk.Button(tab1, text="read", font=fontStyle,
+#                             command=lambda: adc_voltage_init(0x80, ADC_1_8_voltage_entry, "1_8"))
+# read18_button.grid(row=9, column=7)
 
 #single ADC button to call all functions 
-adc_button = tk.Button(tab1, text="ADC", font=fontStyle,
+adc_button = tk.Button(tab1, text="Read", font=fontStyle,
                        command=lambda:[adc_voltage_init(0x01, TIA_ADC_voltage_entry, "TIA"),
                                        adc_voltage_init(0x02, DRV_ADC_voltage_entry, "DRV"),
                                        adc_voltage_init(0x04, LA_ADC_voltage_entry, "LA"),
@@ -642,7 +642,33 @@ adc_button = tk.Button(tab1, text="ADC", font=fontStyle,
                                        adc_voltage_init(0x40, ADC_2_5_voltage_entry, "2_5"),
                                        adc_voltage_init(0x80, ADC_1_8_voltage_entry, "1_8")]
                        )
-adc_button.grid(row=11, column=4)
+adc_button.grid(row=11, column=6)
+
+
+TIA_ADC_current_entry = tk.Entry(tab1, width=5, font=fontStyle)
+TIA_ADC_current_entry.grid(row=1, column=7)
+
+DRV_ADC_current_entry = tk.Entry(tab1, width=5, font=fontStyle)
+DRV_ADC_current_entry.grid(row=3, column=7)
+
+LA_ADC_current_entry = tk.Entry(tab1, width=5, font=fontStyle)
+LA_ADC_current_entry.grid(row=4, column=7)
+
+BF_ADC_current_entry = tk.Entry(tab1, width=5, font=fontStyle)
+BF_ADC_current_entry.grid(row=5, column=7)
+
+BG_ADC_current_entry = tk.Entry(tab1, width=5, font=fontStyle)
+BG_ADC_current_entry.grid(row=6, column=7)
+
+PD_ADC_current_entry = tk.Entry(tab1, width=5, font=fontStyle)
+PD_ADC_current_entry.grid(row=7, column=7)
+
+ADC_2_5_current_entry = tk.Entry(tab1, width=5, font=fontStyle)
+ADC_2_5_current_entry.grid(row=8, column=7)
+
+ADC_1_8_current_entry = tk.Entry(tab1, width=5, font=fontStyle)
+ADC_1_8_current_entry.grid(row=9, column=7)
+
 
 
 # i2C GUI
