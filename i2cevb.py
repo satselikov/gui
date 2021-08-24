@@ -678,7 +678,6 @@ def adc_current_init(channel, entry, text):
     bus.write_i2c_block_data(0x11, 0x02, [0x00, channel]) # X channel for conversion
     
     val = bus.read_word_data(0x11, 0x40)                  # Read single channel and convert to voltage
-    print("hex: ", hex(val))
     
     val = str(hex(val))
     val = val[2:]
