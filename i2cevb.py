@@ -685,8 +685,12 @@ def adc_current_init(channel, entry, text):
     val = endian_switch(val)
     val = convert_voltage(val)
     val = round(val,6)
-    if(text.__eq__("PD") or text.__eq__("2_5")): 
-        val = val*2
+    #add offset
+    if(text.__eq__("TIA") or text.__eq__("DRV") or text.__eq__("LA") or text.__eq__("BF")): 
+        val = val/50
+    if(text.__eq__("BG") or text.__eq__("PD") or text.__eq__("2.5V") or text.__eq__("1.8V")): 
+        val = val/250
+    val=val*1000
     entry.delete(0, 'end')
     entry.insert(0,val)
 
