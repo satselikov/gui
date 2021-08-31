@@ -473,9 +473,9 @@ def click(button):
         pi.hardware_clock(4, 0)
     else:
         button["text"] = "ON"
-        pi.hardware_clock(4, 300000)
+        pi.hardware_clock(4, 500000)
         print("Clock is ON")
-        print("Default set to 300000")
+        print("Default set to 500000")
 
 def submitclock(entry):
     """
@@ -745,13 +745,14 @@ read18_current_button = tk.Button(tab1, text="read", font=fontStyle,
                             command=lambda: adc_current_init(0x80, ADC_1_8_current_entry, "1.8V", 0xff))
 read18_current_button.grid(row=9, column=9)
 
-
 # i2C GUI
-def delete0x00():
-    output_blank_0x00.delete(0, 'end')
-def read0x00():
-    bits = bus2.read_byte_data(0x55, 0x00)
-    output_blank_0x00.insert(0,bin(bits))
+def delete0xxx(entry):
+    entry.delete(0, 'end')
+
+def read0xxx(channel, entry):
+    bits = bus2.read_byte_data(0x55, channel)
+    entry.insert(0,bin(bits))
+
 def write0x00():
     bits = bus2.read_byte_data(0x55, 0x00)
     entry_val = entry_0x00.get()
@@ -767,7 +768,7 @@ entry_0x00 = tk.Entry(tab2, width=5)
 input_text_0x00 = tk.Label(tab2, text="5-trimming code",font=fontStyle1)
 output_text_0x00 = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x00 = tk.Entry(tab2, width=10)
-read_0x00_button = tk.Button(tab2, text='Read', command=lambda:[delete0x00(), read0x00()])
+read_0x00_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x00), read0xxx(0x00, output_blank_0x00)])
 write_0x00_button = tk.Button(tab2, text='Write', command=write0x00)
 
 address_0x00.grid(row=0, column=0)
@@ -779,12 +780,6 @@ output_blank_0x00.grid(row=0, column=7)
 read_0x00_button.grid(row=0, column=8)
 write_0x00_button.grid(row=0, column=9)
 
-
-def delete0x01():
-    output_blank_0x01.delete(0, 'end')
-def read0x01():
-    bits = bus2.read_byte_data(0x55, 0x01)
-    output_blank_0x01.insert(0,bin(bits))
 def write0x01():
     #read_byte_data
     bits = bus2.read_byte_data(0x55, 0x01)
@@ -793,7 +788,6 @@ def write0x01():
     keep = format(int(bits), "b")
     keep = keep[4:5]
     final = str(entry_val) + str(keep) + str(entry_val_2)
-    print(int(final,2))
     bus2.write_byte_data(0x55, 0x01, int(final,2))
 
 address_0x01 = tk.Label(tab2, text="0x01")
@@ -804,7 +798,7 @@ input_text_0x01 = tk.Label(tab2, text="4-bias control",font=fontStyle1)
 input_text_0x01_2 = tk.Label(tab2, text="3-TIA voltage",font=fontStyle1)
 output_text_0x01 = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x01 = tk.Entry(tab2, width=10)
-read_0x01_button = tk.Button(tab2, text='Read', command=lambda:[delete0x01(), read0x01()])
+read_0x01_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x01), read0xxx(0x01, output_blank_0x01)])
 write_0x01_button = tk.Button(tab2, text='Write', command=write0x01)
 
 address_0x01.grid(row=2, column=0)
@@ -818,12 +812,6 @@ output_blank_0x01.grid(row=2, column=7)
 read_0x01_button.grid(row=2, column=8)
 write_0x01_button.grid(row=2, column=9)
 
-
-def delete0x02():
-    output_blank_0x02.delete(0, 'end')
-def read0x02():
-    bits = bus2.read_byte_data(0x55, 0x02)
-    output_blank_0x02.insert(0,bin(bits))
 def write0x02():
     bits = bus2.read_byte_data(0x55, 0x02)
     entry_val = entry_0x02_6.get()
@@ -850,7 +838,7 @@ input_text_0x02_3 = tk.Label(tab2, text="1-TIA_PD",font=fontStyle1)
 input_text_0x02_4 = tk.Label(tab2, text="3-VDD12 REF",font=fontStyle1)
 output_text_0x02 = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x02 = tk.Entry(tab2, width=10)
-read_0x02_button = tk.Button(tab2, text='Read', command=lambda:[delete0x02(), read0x02()])
+read_0x02_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x02), read0xxx(0x02, output_blank_0x02)])
 write_0x02_button = tk.Button(tab2, text='Write', command=write0x02)
 
 address_0x02.grid(row=4, column=0)
@@ -868,11 +856,6 @@ output_blank_0x02.grid(row=4, column=7)
 read_0x02_button.grid(row=4,column=8)
 write_0x02_button.grid(row=4, column=9)
 
-def delete0x03():
-    output_blank_0x03.delete(0, 'end')
-def read0x03():
-    bits = bus2.read_byte_data(0x55, 0x03)
-    output_blank_0x03.insert(0,bin(bits))
 def write0x03():
     bits = bus2.read_byte_data(0x55, 0x03)
     entry_val = entry_0x03_57.get()
@@ -888,7 +871,7 @@ input_text_0x03 = tk.Label(tab2, text="3-o.c swing",font=fontStyle1)
 input_text_0x03_2 = tk.Label(tab2, text="5-o.c ref ctrl",font=fontStyle1)
 output_text_0x03 = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x03 = tk.Entry(tab2, width=10)
-read_0x03_button = tk.Button(tab2, text='Read', command=lambda:[delete0x03(), read0x03()])
+read_0x03_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x03), read0xxx(0x03, output_blank_0x03)])
 write_0x03_button = tk.Button(tab2, text='Write', command=write0x03)
 
 address_0x03.grid(row=6, column=0)
@@ -902,11 +885,6 @@ output_blank_0x03.grid(row=6, column=7)
 read_0x03_button.grid(row=6, column=8)
 write_0x03_button.grid(row=6, column=9)
 
-def delete0x04():
-    output_blank_0x04.delete(0, 'end')
-def read0x04():
-    bits = bus2.read_byte_data(0x55, 0x04)
-    output_blank_0x04.insert(0,bin(bits))
 def write0x04():
     bits = bus2.read_byte_data(0x55, 0x04)
     entry_val = entry_0x04_3.get()
@@ -924,7 +902,7 @@ input_text_0x04 = tk.Label(tab2, text="1-freeze",font=fontStyle1)
 input_text_0x04_2 = tk.Label(tab2, text="3-o.c gain",font=fontStyle1)
 output_text_0x04 = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x04 = tk.Entry(tab2, width=10)
-read_0x04_button = tk.Button(tab2, text='Read', command=lambda:[delete0x04(), read0x04()])
+read_0x04_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x04), read0xxx(0x04, output_blank_0x04)])
 write_0x04_button = tk.Button(tab2, text='Write', command=write0x04)
 
 address_0x04.grid(row=8, column=0)
@@ -938,11 +916,6 @@ output_blank_0x04.grid(row=8, column=7)
 read_0x04_button.grid(row=8, column=8)
 write_0x04_button.grid(row=8, column=9)
 
-def delete0x05():
-    output_blank_0x05.delete(0, 'end')
-def read0x05():
-    bits = bus2.read_byte_data(0x55, 0x05)
-    output_blank_0x05.insert(0,bin(bits))
 def write0x05():
     bits = bus2.read_byte_data(0x55, 0x05)
     entry_val = entry_0x05_04.get()
@@ -957,7 +930,7 @@ entry_0x05_04 = tk.Entry(tab2,width=5)
 input_text_0x05 = tk.Label(tab2, text="5-o.c max",font=fontStyle1)
 output_text_0x05 = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x05 = tk.Entry(tab2, width=10)
-read_0x05_button = tk.Button(tab2, text='Read', command=lambda:[delete0x05(), read0x05()])
+read_0x05_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x05), read0xxx(0x05, output_blank_0x05)])
 
 address_0x05.grid(row=10, column=0)
 description_0x05.grid(row=10, column=1)
@@ -967,11 +940,6 @@ output_text_0x05.grid(row=10, column=6)
 output_blank_0x05.grid(row=10, column=7)
 read_0x05_button.grid(row=10, column=8)
 
-def delete0x06():
-    output_blank_0x06.delete(0, 'end')
-def read0x06():
-    bits = bus2.read_byte_data(0x55, 0x06)
-    output_blank_0x06.insert(0,bin(bits))
 def write0x06():
     bits = bus2.read_byte_data(0x55, 0x06)
     entry_val = entry_0x06_04.get()
@@ -986,7 +954,7 @@ entry_0x06_04 = tk.Entry(tab2,width=5)
 input_text_0x06 = tk.Label(tab2, text="5-o.c min",font=fontStyle1)
 output_text_0x06 = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x06 = tk.Entry(tab2, width=10)
-read_0x06_button = tk.Button(tab2, text='Read', command=lambda:[delete0x06(), read0x06()])
+read_0x06_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x06), read0xxx(0x06, output_blank_0x06)])
 
 address_0x06.grid(row=12, column=0)
 description_0x06.grid(row=12, column=1)
@@ -996,11 +964,6 @@ output_text_0x06.grid(row=12, column=6)
 output_blank_0x06.grid(row=12, column=7)
 read_0x06_button.grid(row=12, column=8)
 
-def delete0x07():
-    output_blank_0x07.delete(0, 'end')
-def read0x07():
-    bits = bus2.read_byte_data(0x55, 0x07)
-    output_blank_0x07.insert(0,bin(bits))
 def write0x07():
     bits = bus2.read_byte_data(0x55, 0x07)
     entry_val = entry_0x07_07.get()
@@ -1013,7 +976,7 @@ entry_0x07_07 = tk.Entry(tab2,width=8)
 input_text_0x07 = tk.Label(tab2, text="8-o.c channel monitored",font=fontStyle1)
 output_text_0x07 = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x07 = tk.Entry(tab2, width=10)
-read_0x07_button = tk.Button(tab2, text='Read', command=lambda:[delete0x07(), read0x07()])
+read_0x07_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x07), read0xxx(0x07, output_blank_0x07)])
 write_0x07_button = tk.Button(tab2, text='Write', command=write0x07)
 
 address_0x07.grid(row=14, column=0)
@@ -1025,11 +988,6 @@ output_blank_0x07.grid(row=14, column=7)
 read_0x07_button.grid(row=14, column=8)
 write_0x07_button.grid(row=14, column=9)
 
-def delete0x08():
-    output_blank_0x08.delete(0, 'end')
-def read0x08():
-    bits = bus2.read_byte_data(0x55, 0x08)
-    output_blank_0x08.insert(0,bin(bits))
 def write0x08():
     bits = bus2.read_byte_data(0x55, 0x08)
     entry_val = entry_0x08_6.get()
@@ -1049,7 +1007,7 @@ input_text_0x08 = tk.Label(tab2, text="1-global lock",font=fontStyle1)
 input_text_0x08_2 = tk.Label(tab2, text="5-o.c DAC level",font=fontStyle1)
 output_text_0x08 = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x08 = tk.Entry(tab2, width=10)
-read_0x08_button = tk.Button(tab2, text='Read', command=lambda:[delete0x08(), read0x08()])
+read_0x08_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x08), read0xxx(0x08, output_blank_0x08)])
 
 address_0x08.grid(row=16, column=0)
 description_0x08.grid(row=16, column=1)
@@ -1061,11 +1019,6 @@ output_text_0x08.grid(row=16, column=6)
 output_blank_0x08.grid(row=16, column=7)
 read_0x08_button.grid(row=16, column=8)
 
-def delete0x09():
-    output_blank_0x09.delete(0, 'end')
-def read0x09():
-    bits = bus2.read_byte_data(0x55, 0x09)
-    output_blank_0x09.insert(0,bin(bits))
 def write0x09():
     bits = bus2.read_byte_data(0x55, 0x09)
     entry_val = entry_0x09_04.get()
@@ -1080,7 +1033,7 @@ entry_0x09_04 = tk.Entry(tab2,width=5)
 input_text_0x09 = tk.Label(tab2, text="5-o.c DAC override",font=fontStyle1)
 output_text_0x09 = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x09 = tk.Entry(tab2, width=10)
-read_0x09_button = tk.Button(tab2, text='Read', command=lambda:[delete0x09(), read0x09()])
+read_0x09_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x09), read0xxx(0x09, output_blank_0x09)])
 write_0x09_button = tk.Button(tab2, text='Write', command=write0x09)
 
 address_0x09.grid(row=18, column=0)
@@ -1092,11 +1045,6 @@ output_blank_0x09.grid(row=18, column=7)
 read_0x09_button.grid(row=18, column=8)
 write_0x09_button.grid(row=18, column=9)
 
-def delete0x0A():
-    output_blank_0x0A.delete(0, 'end')
-def read0x0A():
-    bits = bus2.read_byte_data(0x55, 0x0A)
-    output_blank_0x0A.insert(0,bin(bits))
 def write0x0A():
     bits = bus2.read_byte_data(0x55, 0x0A)
     entry_val = entry_0x0A_04.get()
@@ -1111,7 +1059,7 @@ entry_0x0A_04 = tk.Entry(tab2,width=5)
 input_text_0x0A = tk.Label(tab2, text="5-LED BIAS",font=fontStyle1)
 output_text_0x0A = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x0A = tk.Entry(tab2, width=10)
-read_0x0A_button = tk.Button(tab2, text='Read', command=lambda:[delete0x0A(), read0x0A()])
+read_0x0A_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x0A), read0xxx(0x0A, output_blank_0x0A)])
 write_0x0A_button = tk.Button(tab2, text='Write', command=write0x0A)
 
 address_0x0A.grid(row=20, column=0)
@@ -1123,11 +1071,6 @@ output_blank_0x0A.grid(row=20, column=7)
 read_0x0A_button.grid(row=20, column=8)
 write_0x0A_button.grid(row=20, column=9)
 
-def delete0x0B():
-    output_blank_0x0B.delete(0, 'end')
-def read0x0B():
-    bits = bus2.read_byte_data(0x55, 0x0B)
-    output_blank_0x0B.insert(0,bin(bits))
 def write0x0B():
     bits = bus2.read_byte_data(0x55, 0x0B)
     entry_val = entry_0x0B_04.get()
@@ -1142,7 +1085,7 @@ entry_0x0B_04 = tk.Entry(tab2,width=5)
 input_text_0x0B = tk.Label(tab2, text="5-LED MOD",font=fontStyle1)
 output_text_0x0B = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x0B = tk.Entry(tab2, width=10)
-read_0x0B_button = tk.Button(tab2, text='Read', command=lambda:[delete0x0B(), read0x0B()])
+read_0x0B_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x0B), read0xxx(0x0B, output_blank_0x0B)])
 write_0x0B_button = tk.Button(tab2, text='Write', command=write0x0B)
 
 address_0x0B.grid(row=22, column=0)
@@ -1154,11 +1097,6 @@ output_blank_0x0B.grid(row=22, column=7)
 read_0x0B_button.grid(row=22, column=8)
 write_0x0B_button.grid(row=22, column=9)
 
-def delete0x0C():
-    output_blank_0x0C.delete(0, 'end')
-def read0x0C():
-    bits = bus2.read_byte_data(0x55, 0x0C)
-    output_blank_0x0C.insert(0,bin(bits))
 def write0x0C():
     bits = bus2.read_byte_data(0x55, 0x0C)
     entry_val = entry_0x0C_01.get()
@@ -1173,7 +1111,7 @@ entry_0x0C_01 = tk.Entry(tab2,width=2)
 input_text_0x0C = tk.Label(tab2, text="2-LED boost",font=fontStyle1)
 output_text_0x0C = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x0C = tk.Entry(tab2, width=10)
-read_0x0C_button = tk.Button(tab2, text='Read', command=lambda:[delete0x0C(), read0x0C()])
+read_0x0C_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x0C), read0xxx(0x0C, output_blank_0x0C)])
 write_0x0C_button = tk.Button(tab2, text='Write', command=write0x0C)
 
 address_0x0C.grid(row=24, column=0)
@@ -1185,11 +1123,6 @@ output_blank_0x0C.grid(row=24, column=7)
 read_0x0C_button.grid(row=24, column=8)
 write_0x0C_button.grid(row=24, column=9)
 
-def delete0x0D():
-    output_blank_0x0D.delete(0, 'end')
-def read0x0D():
-    bits = bus2.read_byte_data(0x55, 0x0D)
-    output_blank_0x0D.insert(0,bin(bits))
 def write0x0D():
     bits = bus2.read_byte_data(0x55, 0x0D)
     entry_val = entry_0x0D_04.get()
@@ -1204,7 +1137,7 @@ entry_0x0D_04 = tk.Entry(tab2,width=5)
 input_text_0x0D = tk.Label(tab2, text="5-Input signal reference",font=fontStyle1)
 output_text_0x0D = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x0D = tk.Entry(tab2, width=10)
-read_0x0D_button = tk.Button(tab2, text='Read', command=lambda:[delete0x0D(), read0x0D()])
+read_0x0D_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x0D), read0xxx(0x0D, output_blank_0x0D)])
 write_0x0D_button = tk.Button(tab2, text='Write', command=write0x0D)
 
 address_0x0D.grid(row=26, column=0)
@@ -1216,11 +1149,6 @@ output_blank_0x0D.grid(row=26, column=7)
 read_0x0D_button.grid(row=26, column=8)
 write_0x0D_button.grid(row=26, column=9)
 
-def delete0x0E():
-    output_blank_0x0E.delete(0, 'end')
-def read0x0E():
-    bits = bus2.read_byte_data(0x55, 0x0E)
-    output_blank_0x0E.insert(0,bin(bits))
 def write0x0E():
     bits = bus2.read_byte_data(0x55, 0x0E)
     entry_val = entry_0x0E_04.get()
@@ -1235,7 +1163,7 @@ entry_0x0E_04 = tk.Entry(tab2,width=5)
 input_text_0x0E = tk.Label(tab2, text="5-Common Mod Ref",font=fontStyle1)
 output_text_0x0E = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x0E = tk.Entry(tab2, width=10)
-read_0x0E_button = tk.Button(tab2, text='Read', command=lambda:[delete0x0E(), read0x0E()])
+read_0x0E_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x0E), read0xxx(0x0E, output_blank_0x0E)])
 write_0x0E_button = tk.Button(tab2, text='Write', command=write0x0E)
 
 address_0x0E.grid(row=28, column=0)
@@ -1247,11 +1175,6 @@ output_blank_0x0E.grid(row=28, column=7)
 read_0x0E_button.grid(row=28, column=8)
 write_0x0E_button.grid(row=28, column=9)
 
-def delete0x0F():
-    output_blank_0x0F.delete(0, 'end')
-def read0x0F():
-    bits = bus2.read_byte_data(0x55, 0x0F)
-    output_blank_0x0F.insert(0,bin(bits))
 def write0x0F():
     bits = bus2.read_byte_data(0x55, 0x0F)
     entry_val = entry_0x0F_76.get()
@@ -1275,7 +1198,7 @@ input_text_0x0F_33 = tk.Label(tab2, text="\n0-TIA REF\n1-VBIAS18",font=fontStyle
 input_text_0x0F_4 = tk.Label(tab2, text="1-Protect LED driver",font=fontStyle1)
 output_text_0x0F = tk.Label(tab2, text="output: ",font=fontStyle1)
 output_blank_0x0F = tk.Entry(tab2, width=10)
-read_0x0F_button = tk.Button(tab2, text='Read', command=lambda:[delete0x0F(), read0x0F()])
+read_0x0F_button = tk.Button(tab2, text='Read', command=lambda:[delete0xxx(output_blank_0x0F), read0xxx(0x0F, output_blank_0x0F)])
 write_0x0F_button = tk.Button(tab2, text='Write', command=write0x0F)
 
 address_0x0F.grid(row=30, column=0)
