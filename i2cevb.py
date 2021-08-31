@@ -660,6 +660,9 @@ read18_voltage_button.grid(row=9, column=7)
 TIA_ADC_current_entry = tk.Entry(tab1, width=8, font=fontStyle)
 TIA_ADC_current_entry.grid(row=1, column=8)
 
+LED_ADC_current_entry = tk.Entry(tab1, width=8, font=fontStyle)
+LED_ADC_current_entry.grid(row=2, column=8)
+
 DRV_ADC_current_entry = tk.Entry(tab1, width=8, font=fontStyle)
 DRV_ADC_current_entry.grid(row=3, column=8)
 
@@ -681,11 +684,11 @@ ADC_2_5_current_entry.grid(row=8, column=8)
 ADC_1_8_current_entry = tk.Entry(tab1, width=8, font=fontStyle)
 ADC_1_8_current_entry.grid(row=9, column=8)
 
-def adc_current_init(channel, entry, text):
+def adc_current_init(channel, entry, text, change):
     print("current init test")
     chip_select(0x40)
     bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])    # Enable reference
-    bus.write_i2c_block_data(0x11, 0x04, [0x00, 0xff])    # Set all pins as ADC
+    bus.write_i2c_block_data(0x11, 0x04, [0x00, change])    # Set all pins as ADC
     bus.write_i2c_block_data(0x11, 0x02, [0x00, channel]) # X channel for conversion
     
     val = bus.read_word_data(0x11, 0x40)                  # Read single channel and convert to voltage
@@ -697,7 +700,7 @@ def adc_current_init(channel, entry, text):
     val = convert_voltage(val)
     val = round(val,6)
     #add offset
-    if(text.__eq__("TIA") or text.__eq__("DRV") or text.__eq__("LA") or text.__eq__("BF")): 
+    if(text.__eq__("TIA") or text.__eq__("DRV") or text.__eq__("LA") or text.__eq__("BF") or text.__eq__("LED")): 
         val = val/50
     if(text.__eq__("BG") or text.__eq__("PD") or text.__eq__("2.5V") or text.__eq__("1.8V")): 
         val = val/250
@@ -707,35 +710,39 @@ def adc_current_init(channel, entry, text):
 
 
 tia_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x01, TIA_ADC_current_entry, "TIA"))
+                            command=lambda: adc_current_init(0x01, TIA_ADC_current_entry, "TIA", 0xff))
 tia_read_current_button.grid(row=1, column=9)
 
+LED_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
+                            command=lambda: adc_current_init(0x20, LED_ADC_current_entry, "LED", 0x38))
+LED_read_current_button.grid(row=2, column=9)
+
 drv_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x02, DRV_ADC_current_entry, "DRV"))
+                            command=lambda: adc_current_init(0x02, DRV_ADC_current_entry, "DRV", 0xff))
 drv_read_current_button.grid(row=3, column=9)
 
 la_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x04, LA_ADC_current_entry, "LA"))
+                            command=lambda: adc_current_init(0x04, LA_ADC_current_entry, "LA", 0xff))
 la_read_current_button.grid(row=4, column=9)
 
 bf_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x08, BF_ADC_current_entry, "BF"))
+                            command=lambda: adc_current_init(0x08, BF_ADC_current_entry, "BF", 0xff))
 bf_read_current_button.grid(row=5, column=9)
 
 bg_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x10, BG_ADC_current_entry, "BG"))
+                            command=lambda: adc_current_init(0x10, BG_ADC_current_entry, "BG", 0xff))
 bg_read_current_button.grid(row=6, column=9)
 
 pd_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x20, PD_ADC_current_entry, "PD"))
+                            command=lambda: adc_current_init(0x20, PD_ADC_current_entry, "PD", 0xff))
 pd_read_current_button.grid(row=7, column=9)
 
 read25_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x40, ADC_2_5_current_entry, "2.5V"))
+                            command=lambda: adc_current_init(0x40, ADC_2_5_current_entry, "2.5V", 0xff))
 read25_current_button.grid(row=8, column=9)
 
 read18_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x80, ADC_1_8_current_entry, "1.8V"))
+                            command=lambda: adc_current_init(0x80, ADC_1_8_current_entry, "1.8V", 0xff))
 read18_current_button.grid(row=9, column=9)
 
 
