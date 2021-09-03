@@ -1,18 +1,18 @@
+import pigpio
+import smbus
+from smbus import SMBus
+import time
 import tkinter as tk
 from tkinter import ttk
 from tkinter import *
 import tkinter.font as tkFont
-from smbus import SMBus
-import smbus
-import pigpio
-import time
 
-import extras
-import PowerSupply as p
-import EVB as GUI1
-import LED as l
-import clock
 import ADC
+import clock
+import EVB as GUI1
+import extras
+import LED as l
+import PowerSupply as p
 
 # run sudo pigpiod in terminal for clock to work
 # works for the hard wired boards ( not the GPIO reset feature)
