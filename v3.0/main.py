@@ -19,7 +19,6 @@ import ADC
 
 """
 TODO:
-
 future versions:
     - fix hard coding in the submit + (combine with LED?)
     - update code in cal GUI
