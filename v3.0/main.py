@@ -7,19 +7,23 @@ import smbus
 import pigpio
 import time
 
-#run sudo pigpiod in terminal for clock to work
+import extras
+import PowerSupply as p
+import EVB as GUI1
+import LED as l
+import clock
+import ADC
 
-#works for the hard wired boards ( not the GPIO reset feature)
+# run sudo pigpiod in terminal for clock to work
+# works for the hard wired boards ( not the GPIO reset feature)
 
 """
-TODO: add ADC reads
-voltages + done
-add reset
+TODO:
 
 future versions:
     - fix hard coding in the submit + (combine with LED?)
     - update code in cal GUI
-    - importing from json or something
+    - importing settings from JSON
 """
 
 #define bit masking
@@ -66,70 +70,10 @@ ttk.Label(tab1, text="V2_5", font=fontStyle).grid(row=8, column=0)
 ttk.Label(tab1, text="V1_8", font=fontStyle).grid(row=9, column=0)
 ttk.Label(tab1, text="Clock", font=fontStyle).grid(row=10, column=0)
 
+#initialize bus
 bus = smbus.SMBus(1)
 bus2 = smbus.SMBus(4)
 
-def init():
-    """
-    Initialize the board 
-    """
-    bus.write_byte_data(0x74, 0x06, 0x00)
-    bus.write_byte_data(0x74, 0x07, 0x00)
-    bus.write_byte_data(0x74, 0x02, 0x00)
-    bus.write_byte_data(0x74, 0x03, 0x0c)
-    bus.write_byte_data(0x74, 0x03, 0x1c)
-    bus.write_i2c_block_data(0x11, 0x05, [0x00, 0xff])
-    bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])
-    bus.write_i2c_block_data(0x11, 0x03, [0x00, 0x10])
-
-class PowerSupply:
-    """
-    Each component creates an instance of this class.
-    Getters and Setters for every variable included.
-
-    Args:
-        voltage: from voltage entry box
-        status: whether component is on/off
-        slope: calculated within calibration and used within submit
-        offset: calculated within calibration and used within submit
-    """
-    def __init__(self, voltage, status, slope, offset):
-        self.voltage = voltage
-        self.status = status
-        self.slope = slope
-        self.offset = offset 
-    def set_voltage(self, voltage):
-        self.voltage = voltage
-    def get_voltage(self):
-        return self.voltage
-    def set_status(self, status):
-        self.status = status
-    def get_status(self):
-        return self.status
-    def get_slope(self):
-        return self.slope
-    def set_slope(self, slope):
-        self.slope = slope
-    def get_offset(self):
-        return self.offset
-    def set_offset(self, offset):
-        self.offset = offset
-
-def print_lines():
-    """
-    Cleaner method for printing within terminal for serparation purposes
-    """
-    print("------------------------")
-
-def chip_select(address):
-    """
-    Method called by DAC + ADC to select chip before any command executed
-    """
-    master_bits = bus.read_byte_data(0x74, 0x03)
-    master_bits = master_bits & 0x0f
-    master_bits = master_bits | address
-    bus.write_byte_data(0x74, 0x03, master_bits)
-    
 status = False
 master_bits = 0
 def isClicked(button, text, component, bits, mask):
@@ -156,8 +100,8 @@ def isClicked(button, text, component, bits, mask):
     global master_bits 
     status = not status
     
-    print_lines()
-    chip_select(0x10) #0x10 for DAC
+    extras.print_lines()
+    extras.chip_select(0x10, bus) #0x10 for DAC
     
     #read off the bits if address is 0x02 or 0x03 to only change bits 
     if bits == 0x03:
@@ -185,78 +129,9 @@ def isClicked(button, text, component, bits, mask):
         bus.write_byte_data(0x74, bits, master_bits)
         print(text + " is enabled.")
         print(text + " status is" , component.get_status())
-        
-def submit(component, entry, text, bits, which):
-    """
-    Submit method - when you click the submit button per component entry
-    
-    Args:
-        component: object instance of the Power Supply class (voltage, status, slope, offset)
-        entry: entry value pulled from user input text box
-        text: COMPONENT_text EX; "TIA" or "DRV"
-        
-        Example: 0x11 0x10 0x85 0xca
-                bits: 0x10, 2nd group of 8bits to identify component
-                      which: 8 to identify component 
-    """
-    
-    print_lines()
-    chip_select(0x10)
-    
-    print("Clicked submit for: ", text)
-    
-    if(len(entry.get()) == 0 ):
-        print("Entry for", text, " : None")
-    else:
-        component.set_voltage(entry.get())
-        print("Entry for", text, " :",  entry.get())
-        
-#     print("Status: ", component.get_status())
-#     print("Slope: ", component.get_slope())
-#     print("Offset: ", component.get_offset())
-    
-    voltage = component.get_voltage()
-    slope = component.get_slope()
-    offset = component.get_offset()
-    
-    DAC = float(voltage) * float(slope) + float(offset)
-    DAC = int(DAC)
-    DAC = hex(DAC) #0x987
-    DAC = DAC[2:] #987
-    DAC_1 = DAC[:1] #9
-    DAC_2 = DAC[1:] #87
-    DAC_1 = which + DAC_1 #89
-    DAC_1 = "0x" + DAC_1 #convert to hex
-    DAC_2 = "0x" + DAC_2
-    DAC_1 = int(DAC_1, 16) #convert to int as a hex
-    DAC_2 = int(DAC_2, 16)
-
-#     print("Bits(hex): ", hex(bits))
-#     print("DAC1: ", bin(DAC_1))
-#     print("DAC2: ", bin(DAC_2))
-    bus.write_i2c_block_data(0x11, bits, [DAC_1, DAC_2]) 
-
-def calibrate(component, MIN_DAC, MAX_DAC, min_value, max_value):
-    """
-    Calibration method called by the cal button
-    
-    Args:
-        Example: TIA_text, 0x10, 0x84, 0xff, 0x8f, 0xff, TIA
-        text: COMPONENT_text EX; "TIA" or "DRV"
-        MIN_DAC: hex value minimum
-        MAX_DAC: hex value maximum
-        min_value: float value voltage
-        max_value: float value voltage
-        component: object instance of the Power Supply class (voltage, status, slope, offset) 
-    """
-    slope = (MAX_DAC-MIN_DAC)/(max_value - min_value)
-    offset = -abs(slope)*min_value+MIN_DAC
-    
-    component.set_slope(slope)
-    component.set_offset(offset)
 
 # INIT TIA
-TIA = PowerSupply(1.8,False,0,0)
+TIA = p.PowerSupply(1.8,False,0,0)
 TIA_text = "TIA"
 button_TIA = tk.Button(tab1, text="OFF", font=fontStyle,
                        command=lambda:isClicked(button_TIA, TIA_text, TIA, 0x02, TIA_bits))
@@ -267,60 +142,13 @@ TIA_voltage_entry.grid(row=1, column=1) #user input entry
 TIA_voltage_entry.insert(0,1.8)
 
 TIA_submit = tk.Button(tab1, text="Submit", font=fontStyle,
-                       command=lambda:submit(TIA, TIA_voltage_entry, TIA_text, 0x10, "8"))
+                       command=lambda:GUI1.submit(TIA, TIA_voltage_entry, TIA_text, 0x10, "8", bus))
 TIA_submit.grid(row=1,column=4) #submit button used to grab component information 
 
-calibrate(TIA, 0x4ff, 0xfff, 1.710, 2.994)
-
-#testing method used to hard code LED
-def LEDfunc():
-    print("pressed led")
-    bus.write_byte_data(0x74, 0x02, 0x02)
-    bus.write_byte_data(0x2f, 0x1c, 0x03) #unlocks the POT
-    bus.write_byte_data(0x2f, 0x04, 0x14)
-
-def LED_sub(component, entry, text, address):
-    """
-    special case submit for LED 10 bits altered instead of 16,
-    POT activation towards the end as well
-
-    Args:
-        component: LED object instance variable from PowerSupply class
-        entry: voltage entry grabbed from user input
-        text: "LED"
-        address: 0x2f 
-    """
-    if(len(entry.get()) == 0 ):
-        print("Entry for", text, " : None")
-    else:
-        component.set_voltage(entry.get())
-        print("Entry for", text, " :",  entry.get())
-    
-    voltage = component.get_voltage()
-    slope = component.get_slope()
-    offset = component.get_offset()
-
-    DAC = float(voltage) * float(slope) + float(offset) #calc dac
-    DAC = int(DAC)
-    DAC = hex(DAC)
-    data_to_write = 0x0400 | int(DAC, 16)
-
-    data_to_write = hex(data_to_write) #conv to hex after |
-
-    data_to_write = data_to_write[2:] #take off 0x
-    data_to_write = "0" + data_to_write #add 0 to the front 
-    
-    data_to_write_1 = data_to_write[:2] #part 1 
-    data_to_write_2 = data_to_write[2:] #part 2
-
-    data_to_write_1 = int(data_to_write_1, 16) #conv back to hex
-    data_to_write_2 = int(data_to_write_2, 16) #conv back to hex
-    
-    bus.write_byte_data(0x2f, 0x1c, 0x03) #unlocks the POT
-    bus.write_byte_data(0x2f, data_to_write_1, data_to_write_2) #writes using SMBUS
+GUI1.calibrate(TIA, 0x4ff, 0xfff, 1.710, 2.994)
 
 # INIT LED
-LED = PowerSupply(4.4,False,0,0)
+LED = p.PowerSupply(4.4,False,0,0)
 LED_text = "LED"
 button_LED = tk.Button(tab1, text="OFF", font=fontStyle,
                        command=lambda:isClicked(button_LED, LED_text, LED, 0x02, LED_bits))
@@ -331,13 +159,13 @@ LED_voltage_entry.grid(row=2, column=1)
 LED_voltage_entry.insert(0,1.8)
     
 LED_submit = tk.Button(tab1, text="Submit", font=fontStyle,
-                       command=lambda:LED_sub(LED, LED_voltage_entry, LED_text, 0x2f))
+                       command=lambda:l.LED_sub(LED, LED_voltage_entry, LED_text, 0x2f, bus))
 LED_submit.grid(row=2,column=4)
 
-calibrate(LED, 0x003, 0x014, 0.670, 3.889)
+GUI1.calibrate(LED, 0x003, 0x014, 0.670, 3.889)
 
 # INIT DRV
-DRV = PowerSupply(1.0,False,0,0)
+DRV = p.PowerSupply(1.0,False,0,0)
 DRV_text = "DRV"
 button_DRV = tk.Button(tab1, text="OFF", font=fontStyle,
                        command=lambda:isClicked(button_DRV, DRV_text, DRV, 0x02, DRV_bits))
@@ -348,13 +176,13 @@ DRV_voltage_entry.grid(row=3, column=1)
 DRV_voltage_entry.insert(0,1.0)
     
 DRV_submit = tk.Button(tab1, text="Submit", font=fontStyle,
-                       command=lambda:submit(DRV, DRV_voltage_entry, DRV_text, 0x11, "9"))
+                       command=lambda:GUI1.submit(DRV, DRV_voltage_entry, DRV_text, 0x11, "9", bus))
 DRV_submit.grid(row=3,column=4)
 
-calibrate(DRV, 0x4ff, 0xfff, 1.142, 1.997)
+GUI1.calibrate(DRV, 0x4ff, 0xfff, 1.142, 1.997)
 
 # INIT LA
-LA = PowerSupply(1.0, False,0,0)
+LA = p.PowerSupply(1.0, False,0,0)
 LA_text = "LA"
 button_LA = tk.Button(tab1, text="OFF", font=fontStyle,
                       command=lambda:isClicked(button_LA, LA_text, LA, 0x02, LA_bits))
@@ -365,13 +193,13 @@ LA_voltage_entry.grid(row=4, column=1)
 LA_voltage_entry.insert(0,1.0)
     
 LA_submit = tk.Button(tab1, text="Submit", font=fontStyle,
-                      command=lambda:submit(LA, LA_voltage_entry, LA_text, 0x12, "a"))
+                      command=lambda:GUI1.submit(LA, LA_voltage_entry, LA_text, 0x12, "a", bus))
 LA_submit.grid(row=4,column=4)
 
-calibrate(LA, 0x4ff, 0xfff, 1.142, 2.001)
+GUI1.calibrate(LA, 0x4ff, 0xfff, 1.142, 2.001)
 
 # INIT BF
-BF = PowerSupply(1.0, False,0,0)
+BF = p.PowerSupply(1.0, False,0,0)
 BF_text = "BF"
 button_BF = tk.Button(tab1, text="OFF", font=fontStyle,
                       command=lambda:isClicked(button_BF, BF_text, BF, 0x02, BF_bits))
@@ -382,13 +210,13 @@ BF_voltage_entry.grid(row=5, column=1)
 BF_voltage_entry.insert(0,1.0)
     
 BF_submit = tk.Button(tab1, text="Submit", font=fontStyle,
-                      command=lambda:submit(BF, BF_voltage_entry, BF_text, 0x13, "b"))
+                      command=lambda:GUI1.submit(BF, BF_voltage_entry, BF_text, 0x13, "b", bus))
 BF_submit.grid(row=5,column=4)
 
-calibrate(BF, 0x4ff, 0xfff, 1.143, 2.002)
+GUI1.calibrate(BF, 0x4ff, 0xfff, 1.143, 2.002)
     
 # INIT BG
-BG = PowerSupply(1.8, False,0,0)
+BG = p.PowerSupply(1.8, False,0,0)
 BG_text = "BG"
 button_BG = tk.Button(tab1, text="OFF", font=fontStyle,
                       command=lambda:isClicked(button_BG, BG_text, BG, 0x02, BG_bits))
@@ -399,13 +227,13 @@ BG_voltage_entry.grid(row=6, column=1)
 BG_voltage_entry.insert(0,1.8)
     
 BG_submit = tk.Button(tab1, text="Submit", font=fontStyle,
-                      command=lambda:submit(BG, BG_voltage_entry, BG_text, 0x14, "c"))
+                      command=lambda:GUI1.submit(BG, BG_voltage_entry, BG_text, 0x14, "c", bus))
 BG_submit.grid(row=6,column=4)
 
-calibrate(BG, 0x4ff, 0xfff,1.711, 2.991)
+GUI1.calibrate(BG, 0x4ff, 0xfff,1.711, 2.991)
     
 # INIT PD
-PD = PowerSupply(3.0, False,0,0)
+PD = p.PowerSupply(3.0, False,0,0)
 PD_text = "PD"
 button_PD = tk.Button(tab1, text="OFF", font=fontStyle,
                       command=lambda:isClicked(button_PD, PD_text, PD, 0x02, PD_bits))
@@ -416,13 +244,13 @@ PD_voltage_entry.grid(row=7, column=1)
 PD_voltage_entry.insert(0,3.0)
     
 PD_submit = tk.Button(tab1, text="Submit", font=fontStyle,
-                      command=lambda:submit(PD, PD_voltage_entry, PD_text, 0x15,"d"))
+                      command=lambda:GUI1.submit(PD, PD_voltage_entry, PD_text, 0x15,"d", bus))
 PD_submit.grid(row=7,column=4)
 
-calibrate(PD, 0x9ff, 0xfff,3.057, 3.990)
+GUI1.calibrate(PD, 0x9ff, 0xfff,3.057, 3.990)
 
 # INIT 2.5V
-V2_5 = PowerSupply(3.3, False,0,0)
+V2_5 = p.PowerSupply(3.3, False,0,0)
 V2_5_text = "2.5V"
 button_V2_5 = tk.Button(tab1, text="OFF", font=fontStyle,
                         command=lambda:isClicked(button_V2_5, V2_5_text, V2_5, 0x02, V2_5_bits))
@@ -433,13 +261,13 @@ V2_5_voltage_entry.grid(row=8, column=1)
 V2_5_voltage_entry.insert(0,2.5)
     
 V2_5_submit = tk.Button(tab1, text="Submit", font=fontStyle,
-                        command=lambda:submit(V2_5, V2_5_voltage_entry, V2_5_text, 0x16, "e"))
+                        command=lambda:GUI1.submit(V2_5, V2_5_voltage_entry, V2_5_text, 0x16, "e", bus))
 V2_5_submit.grid(row=8,column=4)
 
-calibrate(V2_5, 0x9ff, 0xfff,2.776, 3.626)
+GUI1.calibrate(V2_5, 0x9ff, 0xfff,2.776, 3.626)
 
 # INIT 1.8V
-V1_8 = PowerSupply(1.8, False,0,0)
+V1_8 = p.PowerSupply(1.8, False,0,0)
 V1_8_text = "1.8V"
 button_V1_8 = tk.Button(tab1, text="OFF", font=fontStyle,
                         command=lambda:isClicked(button_V1_8, V1_8_text, V1_8, 0x03, V1_8_bits))
@@ -450,56 +278,23 @@ V1_8_voltage_entry.grid(row=9, column=1)
 V1_8_voltage_entry.insert(0,1.8)
     
 V1_8_submit = tk.Button(tab1, text="Submit", font=fontStyle,
-                        command=lambda:submit(V1_8, V1_8_voltage_entry, V1_8_text, 0x17, "f"))
+                        command=lambda:GUI1.submit(V1_8, V1_8_voltage_entry, V1_8_text, 0x17, "f", bus))
 V1_8_submit.grid(row=9,column=4)
 
-calibrate(V1_8, 0x4ff, 0xfff,1.708, 2.993)
-
-pi = pigpio.pi() 
-status_clock = False
-def click(button):
-    """
-    click method used to activate clock
-    
-    Args:
-        button: clock on/off passed in as a parameter
-    """
-    global pi
-    global status_clock
-    status_clock = not status_clock
-    print_lines()
-    if status_clock:
-        button["text"] = "OFF"
-        pi.hardware_clock(4, 0)
-    else:
-        button["text"] = "ON"
-        pi.hardware_clock(4, 500000)
-        print("Clock is ON")
-        print("Default set to 500000")
-
-def submitclock(entry):
-    """
-    submit helper for clock
-    
-    Args:
-        entry: hz
-    """
-    global pi
-    hz = int(entry.get())
-    pi.hardware_clock(4, hz)
-    print("clock frequency set to: ", entry.get())
+GUI1.calibrate(V1_8, 0x4ff, 0xfff,1.708, 2.993)
     
 # INIT CLOCK Deafault - 300000
 clock_entry = tk.Entry(tab1, width=7, font=fontStyle)
 clock_entry.grid(row=10, column=1)
 
 clock_button = tk.Button(tab1, text="OFF", font=fontStyle,
-                         command=lambda:click(clock_button))
+                         command=lambda:clock.click(clock_button))
 clock_button.grid(row=10, column=3)
 
 clock_submit = tk.Button(tab1, text="Submit", font=fontStyle,
-                        command=lambda:submitclock(clock_entry))
+                        command=lambda:clock.submitclock(clock_entry))
 clock_submit.grid(row=10,column=4)
+
 
 TIA_ADC_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
 TIA_ADC_voltage_entry.grid(row=1, column=6)
@@ -528,119 +323,42 @@ ADC_2_5_voltage_entry.grid(row=8, column=6)
 ADC_1_8_voltage_entry = tk.Entry(tab1, width=5, font=fontStyle)
 ADC_1_8_voltage_entry.grid(row=9, column=6)
 
-def adc_voltage_init(channel, entry, text, change):
-    """
-    ADC voltage init method
-    
-    Args:
-        -channel: select channel for conversion
-        -entry: GUI entry to output text
-        -text: attach name of component for debugging purposes
-    """
-    
-    if(text.__eq__("LED")):
-        chip_select(0x80)
-    else:
-        chip_select(0x20)                                     # Set address A0_AN1 to talk to U25
-    bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])    # Enable reference
-    bus.write_i2c_block_data(0x11, 0x04, [0x00, change])    # Set all pins as ADC
-    bus.write_i2c_block_data(0x11, 0x02, [0x00, channel]) # X channel for conversion
-    
-    val = bus.read_word_data(0x11, 0x40)                  # Read single channel and convert to voltage
-
-#     print("hex: ", hex(val))
-
-    #parsing
-    val = str(hex(val))
-    val = val[2:]
-    val = missing_zeros(val)
-    val = endian_switch(val)
-    val = convert_voltage(val)
-    val = round(val,3)
-    if(text.__eq__("PD") or text.__eq__("2_5") or text.__eq__("LED")): 
-        val = val*2
-    entry.delete(0, 'end')
-    entry.insert(0,val)
-
-
-def endian_switch(val):
-    """
-    Helper method for ADC to convert 16 bit hex digit from little endian to big endian
-    
-    Args:
-        -val: hex val to be converted
-    """
-    val1 = val[:2]
-    val2 = val[2:]
-    val = val2 + val1
-    return val
-
-def convert_voltage(val):
-    """
-    Helper Method for ADC
-    
-    Args:
-        -val: voltage value to be converted
-    """
-    val = val[1:]
-    return (int(val, 16)*2.5)/0xfff
-
-def missing_zeros(val):
-    """
-    Adds the leading zeros if the value is only 3,2,1, or 0. Hex must be 4 digits
-    
-    Example: 0x212 changed to 0x0212
-             0x11 changed to 0x0011
-             0x4 changed to 0x0004
-    
-    Args:
-        -val: hex val to be converted
-    """
-    if(len(val) == 3):
-        val = '0' + val
-    if(len(val) == 2):
-        val = '00' + val
-    if(len(val) == 1):
-        val = '000' + val
-    if(len(val) == 0):
-        val = '0000' + val
-    return val
 
 # INIT read buttons for ADC (can change to one button)
 tia_read_voltage_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x01, TIA_ADC_voltage_entry, "TIA", 0xff))
+                            command=lambda: ADC.adc_voltage_init(0x01, TIA_ADC_voltage_entry, "TIA", 0xff, bus))
 tia_read_voltage_button.grid(row=1, column=7)
 
 LED_read_voltage_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x08, LED_ADC_voltage_entry, "LED", 0x38))
+                            command=lambda: ADC.adc_voltage_init(0x08, LED_ADC_voltage_entry, "LED", 0x38, bus))
 LED_read_voltage_button.grid(row=2, column=7)
 
 drv_read_voltage_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x02, DRV_ADC_voltage_entry, "DRV", 0xff))
+                            command=lambda: ADC.adc_voltage_init(0x02, DRV_ADC_voltage_entry, "DRV", 0xff, bus))
 drv_read_voltage_button.grid(row=3, column=7)
 
 la_read_voltage_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x04, LA_ADC_voltage_entry, "LA", 0xff))
+                            command=lambda: ADC.adc_voltage_init(0x04, LA_ADC_voltage_entry, "LA", 0xff, bus))
 la_read_voltage_button.grid(row=4, column=7)
 
 bf_read_voltage_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x08, BF_ADC_voltage_entry, "BF", 0xff))
+                            command=lambda: ADC.adc_voltage_init(0x08, BF_ADC_voltage_entry, "BF", 0xff, bus))
 bf_read_voltage_button.grid(row=5, column=7)
 
 bg_read_voltage_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x10, BG_ADC_voltage_entry, "BG", 0xff))
+                            command=lambda: ADC.adc_voltage_init(0x10, BG_ADC_voltage_entry, "BG", 0xff, bus))
 bg_read_voltage_button.grid(row=6, column=7)
 
 pd_read_voltage_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x20, PD_ADC_voltage_entry, "PD", 0xff))
+                            command=lambda: ADC.adc_voltage_init(0x20, PD_ADC_voltage_entry, "PD", 0xff, bus))
 pd_read_voltage_button.grid(row=7, column=7)
 
 read25_voltage_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x40, ADC_2_5_voltage_entry, "2_5", 0xff))
+                            command=lambda: ADC.adc_voltage_init(0x40, ADC_2_5_voltage_entry, "2_5", 0xff, bus))
 read25_voltage_button.grid(row=8, column=7)
 
 read18_voltage_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_voltage_init(0x80, ADC_1_8_voltage_entry, "1_8", 0xff))
+                            command=lambda: ADC.adc_voltage_init(0x80, ADC_1_8_voltage_entry, "1_8", 0xff, bus))
 read18_voltage_button.grid(row=9, column=7)
 
 #single ADC button to call all functions 
@@ -684,65 +402,40 @@ ADC_2_5_current_entry.grid(row=8, column=8)
 ADC_1_8_current_entry = tk.Entry(tab1, width=8, font=fontStyle)
 ADC_1_8_current_entry.grid(row=9, column=8)
 
-def adc_current_init(channel, entry, text, change):
-    print("current init test")
-    chip_select(0x40)
-    bus.write_i2c_block_data(0x11, 0x0b, [0x02, 0x00])    # Enable reference
-    bus.write_i2c_block_data(0x11, 0x04, [0x00, change])    # Set all pins as ADC
-    bus.write_i2c_block_data(0x11, 0x02, [0x00, channel]) # X channel for conversion
-    
-    val = bus.read_word_data(0x11, 0x40)                  # Read single channel and convert to voltage
-    
-    val = str(hex(val))
-    val = val[2:]
-    val = missing_zeros(val)
-    val = endian_switch(val)
-    val = convert_voltage(val)
-    val = round(val,6)
-    #add offset
-    if(text.__eq__("TIA") or text.__eq__("DRV") or text.__eq__("LA") or text.__eq__("BF") or text.__eq__("LED")): 
-        val = val/50
-    if(text.__eq__("BG") or text.__eq__("PD") or text.__eq__("2.5V") or text.__eq__("1.8V")): 
-        val = val/250
-    val=val*1000
-    entry.delete(0, 'end')
-    entry.insert(0,val)
-
-
 tia_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x01, TIA_ADC_current_entry, "TIA", 0xff))
+                            command=lambda: ADC.adc_current_init(0x01, TIA_ADC_current_entry, "TIA", 0xff, bus))
 tia_read_current_button.grid(row=1, column=9)
 
 LED_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x20, LED_ADC_current_entry, "LED", 0x38))
+                            command=lambda: ADC.adc_current_init(0x20, LED_ADC_current_entry, "LED", 0x38, bus))
 LED_read_current_button.grid(row=2, column=9)
 
 drv_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x02, DRV_ADC_current_entry, "DRV", 0xff))
+                            command=lambda: ADC.adc_current_init(0x02, DRV_ADC_current_entry, "DRV", 0xff, bus))
 drv_read_current_button.grid(row=3, column=9)
 
 la_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x04, LA_ADC_current_entry, "LA", 0xff))
+                            command=lambda: ADC.adc_current_init(0x04, LA_ADC_current_entry, "LA", 0xff, bus))
 la_read_current_button.grid(row=4, column=9)
 
 bf_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x08, BF_ADC_current_entry, "BF", 0xff))
+                            command=lambda: ADC.adc_current_init(0x08, BF_ADC_current_entry, "BF", 0xff, bus))
 bf_read_current_button.grid(row=5, column=9)
 
 bg_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x10, BG_ADC_current_entry, "BG", 0xff))
+                            command=lambda: ADC.adc_current_init(0x10, BG_ADC_current_entry, "BG", 0xff, bus))
 bg_read_current_button.grid(row=6, column=9)
 
 pd_read_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x20, PD_ADC_current_entry, "PD", 0xff))
+                            command=lambda: ADC.adc_current_init(0x20, PD_ADC_current_entry, "PD", 0xff, bus))
 pd_read_current_button.grid(row=7, column=9)
 
 read25_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x40, ADC_2_5_current_entry, "2.5V", 0xff))
+                            command=lambda: ADC.adc_current_init(0x40, ADC_2_5_current_entry, "2.5V", 0xff, bus))
 read25_current_button.grid(row=8, column=9)
 
 read18_current_button = tk.Button(tab1, text="read", font=fontStyle,
-                            command=lambda: adc_current_init(0x80, ADC_1_8_current_entry, "1.8V", 0xff))
+                            command=lambda: ADC.adc_current_init(0x80, ADC_1_8_current_entry, "1.8V", 0xff, bus))
 read18_current_button.grid(row=9, column=9)
 
 # i2C GUI
@@ -1218,7 +911,8 @@ output_blank_0x0F.grid(row=30, column=7)
 read_0x0F_button.grid(row=30, column=8)
 write_0x0F_button.grid(row=30, column=9)
 
+
 # main
-init()
+extras.init(bus)
 
 tab1.mainloop()
