@@ -220,20 +220,32 @@ def submit(component, entry, text, bits, which):
     offset = component.get_offset()
     
     DAC = float(voltage) * float(slope) + float(offset)
+    print("voltage", voltage)
+    print("slope", slope)
+    print("offset", offset)
+    print("DAC: ", DAC)
     DAC = int(DAC)
     DAC = hex(DAC) #0x987
     DAC = DAC[2:] #987
+    print("DAC: ",DAC)
     DAC_1 = DAC[:1] #9
+    print("DAC1: ",DAC_1) 
     DAC_2 = DAC[1:] #87
+    print("DAC2: ",DAC_2) 
     DAC_1 = which + DAC_1 #89
+    print("DAC1: ",DAC_1)  
     DAC_1 = "0x" + DAC_1 #convert to hex
+    print("DAC1: ",DAC_1)  
     DAC_2 = "0x" + DAC_2
+    print("DAC2: ",DAC_2)  
     DAC_1 = int(DAC_1, 16) #convert to int as a hex
+    print("DAC1: ",DAC_1) 
     DAC_2 = int(DAC_2, 16)
+    print("DAC2: ",DAC_2)
 
 #     print("Bits(hex): ", hex(bits))
-#     print("DAC1: ", bin(DAC_1))
-#     print("DAC2: ", bin(DAC_2))
+    print("DAC1: ", hex(DAC_1))
+    print("DAC2: ", hex(DAC_2))
     bus.write_i2c_block_data(0x11, bits, [DAC_1, DAC_2]) 
 
 def calibrate(component, MIN_DAC, MAX_DAC, min_value, max_value):
@@ -270,7 +282,9 @@ TIA_submit = tk.Button(tab1, text="Submit", font=fontStyle,
                        command=lambda:submit(TIA, TIA_voltage_entry, TIA_text, 0x10, "8"))
 TIA_submit.grid(row=1,column=4) #submit button used to grab component information 
 
-calibrate(TIA, 0x4ff, 0xfff, 1.710, 2.994)
+#calibrate(TIA, 0x4ff, 0xfff, 1.501, 2.605)
+#calibrate(TIA, 0x4ff, 0xfff, 1.710, 2.994)
+calibrate(TIA, 0x4ff, 0xfff, 1.142, 1.997)
 
 #testing method used to hard code LED
 def LEDfunc():
@@ -1220,5 +1234,3 @@ write_0x0F_button.grid(row=30, column=9)
 
 # main
 init()
-
-tab1.mainloop()
